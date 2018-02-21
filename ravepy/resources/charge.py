@@ -36,20 +36,30 @@ class BaseCharge:
         'recurring_stop': 'recurring_stop',
     ]
 
-    def __init__(self, auth_details, *args, *kwargs):
+    def __init__(self, auth_details, data=None, *args, *kwargs):
         """
         The base class that all charge types inherit from. Concrete
         implementations of this would be a CardCharge and an AccountCharge.
         This class would normally not be instantiated by the user
         """
-        pass
+        self.was_retrieved = False
+        self._req_data_dict = None
+        self._res_data_dict = data
 
     @property
-    def data_dict(self):
+    def request_data(self):
         """
         Gets the JSON-like dict that will be the body of the payment request.
         """
-        return self._data_dict
+        return self._req_data_dict
+
+    @property
+    def response_data(self):
+        """
+        Gets the JSON-like dict that was the response to the most charge
+        request.
+        """
+        return self._res_data_dict
 
     @property
     def sorted_parameter_values(self):
@@ -67,6 +77,14 @@ class BaseCharge:
         """
         return ''
 
+    @property
+    def auth_url(self):
+        """
+        The auth_url that the client-side should redirect to incase of a
+        3DSecure auth model.
+        """
+        pass
+
     def create(self, *args, **kwargs):
         """
         Create a new charge. On concrete subclasses, this might be a Card or
@@ -75,9 +93,87 @@ class BaseCharge:
         """
         raise NotImplemented('create is not implemented on the base class')
 
-    def charge(self, *args, **kwargs):
+    def _build_request_data(self):
+        pass
+
+    def _can_use_pin_auth_model(self):
+        pass
+
+    def _can_use_3dsecure_auth_model(self):
+        pass
+
+    def _needs_pin_auth(self, response_dict):
+        pass
+
+    def charge(self, redirect_url=None, ping_url=None, *args, **kwargs):
         """
         Makes an API request to make the charge. This method encrypts the
         request data for you before sending the request to the server.
         """
+        #Encrypt card details see
+        #https://flutterwavedevelopers.readme.io/v1.0/reference#rave-encryption
+        #-2
+
+        #build and send request
+
+        #Check for case where card is local mastercard or verve and resend
+
+        #Remember to set auth_url in case you need to
+
         raise NotImplemented('Charge not implemented in base class')
+
+    def _send_charge_request(self, auth_model):
+        pass
+
+    def validate_charge_response(self):
+        raise NotImplemented("Validation of charge no implemented")
+
+    @classmethod
+    def retrieve(cls, auth_details, gateway_ref=None, merchant_ref=None,
+        ping_url=None):
+        """
+        Retrieves a charge resource from the API gateway. This class method
+        creates an instance of this class and tries it's best to reconstruct
+        what the initial request and response must have looked like when the
+        charge was first made.
+
+        Args:
+            auth_details: The AuthDetails that will be used to make an
+                authenticated request to retrieve the card.
+        Kwargs:
+            gateway_ref: (optional) The transaction reference the gateway
+                returned when the charge was initiated. If this is provided the
+                normal requery transaction verification flow is used to
+                retrieve the charge. If not provided, the merchant_ref is
+                required.
+            merchant_ref: (optional) The merchant transaction unique reference
+                that was provided by the user when the charge was first
+                initiated. If param is provided, then the xrequery flow is used
+                to retrieve the charge. If not provided, then gateway_ref is
+                required.
+            ping_url: (optional) A url that would be used to implement the
+                flow for retrieving a charge status. The presence of this
+                param indicates that we have tried to retrieve the charge
+                status before, but the request timed out, and we are now
+                polling to get the charge data.
+        Note:
+            when a charge is retrieved, certain actions like calling
+            charge again should fail.
+        """
+        pass
+
+    def sanity_checks(self, amount, currency, status='success', charge_code=0,
+        *args, **kwargs):
+        """
+        Performs basic sanity checks on the charge. The charge should have
+        been initiated on the gateway before calling this method. More
+        concretely, it should have a transaction reference assigned to it at
+        the point where this method will be called.
+        """
+
+    @classmethod
+    def banks(cls, country):
+        """
+        Retrieves the list of Banks for a given country.
+        """
+        pass
