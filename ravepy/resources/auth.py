@@ -23,8 +23,9 @@ class AuthDetails:
         seckeyadjustedfirst12 = seckeyadjusted[:12]
         self.encryption_key = seckeyadjustedfirst12 + hashedseckeylast12
 
-    def encryptData(self, data):
+    def encrypt_data(self, data):
         """
-        Encrypts a card or account request that would be used to make a charge.
+        Encrypts a card or account request data that would be used to make a
+        charge.
         """
         pass
