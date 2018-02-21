@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 import pytest
 import base64
 from Crypto.Cipher import DES3
@@ -26,13 +28,13 @@ def test_encrypt_data(auth_details):
     plain_text = 'ioe98i3g5n9wpn5gw935thq93hpt48hq39848q34ijoiqj4jn4'
     #implementation details from official web api docs
     md5Key = hashlib.md5(auth_details.encryption_key.encode("utf-8")).digest()
-    md5Key = "{}{}".format(md5Key, md5Key[0:8])
+    md5Key = md5Key + md5Key[0:8]
 
     blockSize = 8
     padDiff = blockSize - (len(plain_text) % blockSize)
     cipher = DES3.new(md5Key, DES3.MODE_ECB)
 
-    plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
-    encrypted = base64.b64encode(cipher.encrypt(plain_text))
+    new_plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
+    encrypted = base64.b64encode(cipher.encrypt(new_plain_text))
 
     assert auth_details.encrypt_data(plain_text) == encrypted
