@@ -1,0 +1,23 @@
+# IDEs
+.project
+.pydevproject
+.idea
+.vscode
+.settings
+
+# Random files
+*~
+\#*
+
+# Python compiled byte code
+*.pyc
+*.pyo
+
+# Coverage
+coverage/
+.coverage
+.cache
+.coveragerc
+
+# Others
+*__pycache__/
