@@ -9,15 +9,9 @@ class AuthDetails:
         encryption keys that would be used for encrypting a Card or Account
         details.
         """
-        self._secret_key = secret_key
-        self._public_key = public_key
-
-    def getKey(self):
-        """
-        Gets an encryption key that will be used for encrypting card or
-        account details before they are used in making a transaction.
-        """
-        pass
+        self.secret_key = secret_key
+        self.public_key = public_key
+        self.encryption_key = None
 
     def encryptData(self, data):
         """
