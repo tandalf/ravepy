@@ -7,12 +7,7 @@ import hashlib
 
 from ravepy.resources.auth import AuthDetails
 
-@pytest.fixture(scope='module')
-def auth_details():
-    return AuthDetails('FLWSECK-123456c59c8ef06749e6a72bc90e34a1-X',
-        public_key='FLWPUBK-123456c59c8ef06749e6a72bc90e34a1-X')
-
-def test_get_encryption_key(auth_details):
+def test_get_encryption_key(sample_auth_details):
     #implementation details from official web api docs
     seckey = auth_details.secret_key
     hashedseckey = hashlib.md5(seckey.encode("utf-8")).hexdigest()
@@ -24,7 +19,7 @@ def test_get_encryption_key(auth_details):
     #assert our implementation meets theirs
     assert auth_details.encryption_key == encryption_key
 
-def test_encrypt_data(auth_details):
+def test_encrypt_data(sample_auth_details):
     plain_text = 'ioe98i3g5n9wpn5gw935thq93hpt48hq39848q34ijoiqj4jn4'
     #implementation details from official web api docs
     md5Key = hashlib.md5(auth_details.encryption_key.encode("utf-8")).digest()

@@ -5,7 +5,7 @@ __metaclass__ = type
 class BaseCharge:
     required_fields = ['pub_key', 'first_name', 'last_name', 'ip_address',
         'merchant_transaction_ref']
-    internal_to_external_field_map = [
+    internal_to_external_field_map = {
         'pub_key': 'PBFPubKey',
         'currency': 'currency',
         'country': 'country',
@@ -34,9 +34,9 @@ class BaseCharge:
 
         #Recurring billing fields include Card fields +
         'recurring_stop': 'recurring_stop',
-    ]
+    }
 
-    def __init__(self, auth_details, data=None, *args, *kwargs):
+    def __init__(self, auth_details, data=None, *args, **kwargs):
         """
         The base class that all charge types inherit from. Concrete
         implementations of this would be a CardCharge and an AccountCharge.
@@ -45,6 +45,7 @@ class BaseCharge:
         self.was_retrieved = False
         self._req_data_dict = None
         self._res_data_dict = data
+        self._sorted_parameter_values = None
 
     @property
     def request_data(self):
@@ -65,9 +66,15 @@ class BaseCharge:
     def sorted_parameter_values(self):
         """
         Gets a sorted list of parameter values. The parameter values in this
-        list has been sorted in a chronological order.
+        list has been sorted in a chronological order. Parameter values are
+        gotten from this.request_data.
         """
-        return []
+        if not self._sorted_parameter_values:
+            self._sorted_parameter_values = []
+            for key in sorted(self.request_data.keys()):
+                self._sorted_parameter_values.append(self.request_data[key])
+
+        return self._sorted_parameter_values
 
     @property
     def integrity_checksum(self):
@@ -170,6 +177,7 @@ class BaseCharge:
         concretely, it should have a transaction reference assigned to it at
         the point where this method will be called.
         """
+        pass
 
     @classmethod
     def banks(cls, country):
