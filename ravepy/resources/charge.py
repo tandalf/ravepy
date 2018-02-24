@@ -42,6 +42,7 @@ class BaseCharge:
         implementations of this would be a CardCharge and an AccountCharge.
         This class would normally not be instantiated by the user
         """
+        self._auth_details = auth_details
         self.was_retrieved = False
         self._req_data_dict = None
         self._res_data_dict = data
@@ -80,9 +81,12 @@ class BaseCharge:
     def integrity_checksum(self):
         """
         Gets the integrity checksum that would be sent to the client-side to
-        help ensure the integrity of the user submitted data.
+        help ensure the integrity of the user submitted data. The
+        integrity checksum is computed from the request_data property of the
+        current charge.
         """
-        return ''
+        plain_text = self._auth_details.secret_key + ''.join(self.sorted_parameter_values)
+        return self._auth_details.encrypt_data(plain_text)
 
     @property
     def auth_url(self):
