@@ -25,9 +25,11 @@ def sample_integrity_checksum(sample_auth_details, sample_request_data):
     for key in sorted(sample_request_data.keys()):
         sorted_parameter_values.append(sample_request_data[key])
 
-    plain_text = auth_details.secret_key + ''.join(sorted_parameter_values)
+    plain_text = sample_auth_details.secret_key +\
+        ''.join(sorted_parameter_values)
     #implementation details from official web api docs
-    md5Key = hashlib.md5(auth_details.encryption_key.encode("utf-8")).digest()
+    md5Key = hashlib.md5(
+        sample_auth_details.encryption_key.encode("utf-8")).digest()
     md5Key = md5Key + md5Key[0:8]
 
     blockSize = 8
