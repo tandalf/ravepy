@@ -14,6 +14,14 @@ def sample_auth_details():
 @pytest.fixture()
 def sample_request_data():
     return {
+        'PBFPubKey': 'FLWPUBK-123456c59c8ef06749e6a72bc90e34a1-X',
+        'currency': 'USD',
+        'country': 'NG',
+    }
+
+@pytest.fixture()
+def sample_original_request_data():
+    return {
         'pub_key': 'FLWPUBK-123456c59c8ef06749e6a72bc90e34a1-X',
         'currency': 'USD',
         'country': 'NG',
