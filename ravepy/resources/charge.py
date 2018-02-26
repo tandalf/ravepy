@@ -155,9 +155,9 @@ class BaseCharge:
 
         raise NotImplemented('Charge not implemented in base class')
 
-    def _send_charge_request(self, auth_model):
+    def _send_charge_request(self):
         direct_charge_body = {
-            'PBFPubKey': self.auth_details.public_key,
+            'PBFPubKey': self._auth_details.public_key,
             'client': self.integrity_checksum,
             'alg': '3DES-24'
         }

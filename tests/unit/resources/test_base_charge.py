@@ -1,7 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from mock import MagicMock, patch,  PropertyMock
+from mock import MagicMock, patch,  PropertyMock, call
 
 from ravepy.resources.charge import BaseCharge
 
@@ -40,3 +40,18 @@ def test__build_request_data(sample_request_data, sample_original_request_data,\
         assert key in list(BaseCharge.internal_to_external_field_map.values())
         assert value ==\
             charge._original_request_data[inv_map[key]]
+
+def test__send_charge_request(sample_auth_details):
+    with patch('ravepy.resources.charge.BaseCharge.integrity_checksum',\
+        new_callable=PropertyMock) as mocked_integrity_checksum:
+        mocked_integrity_checksum.return_value = 'fakechecksum'
+
+        with patch('ravepy.resources.charge.BaseCharge._send_post') as send_post:
+            charge = BaseCharge(sample_auth_details)
+            charge._send_charge_request()
+            send_post_call = call({
+                'PBFPubKey': sample_auth_details.public_key,
+                'client': 'fakechecksum',
+                'alg': '3DES-24'
+            })
+            assert charge._send_post.call_args == send_post_call
