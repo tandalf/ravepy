@@ -1,5 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 
+from ravepy.exceptions.base import RaveError
+from ravepy.exceptions.charge import RavePinRequiredError, RaveChargeError
+
 __metaclass__ = type
 
 class BaseCharge:
@@ -34,6 +37,9 @@ class BaseCharge:
 
         #Recurring billing fields include Card fields +
         'recurring_stop': 'recurring_stop',
+
+        #others
+        'redirect_url': 'redirect_url',
     }
 
     def __init__(self, auth_details, data=None, *args, **kwargs):
@@ -44,6 +50,7 @@ class BaseCharge:
         """
         self._auth_details = auth_details
         self.was_retrieved = False
+        self._original_request_data = None
         self._req_data_dict = None
         self._res_data_dict = data
         self._sorted_parameter_values = None
@@ -102,10 +109,23 @@ class BaseCharge:
         an Account charge. When a charge is created like this, you can then
         call .charge() on it to initiate the charge.
         """
-        raise NotImplemented('create is not implemented on the base class')
+        self._original_request_data = kwargs
+        self._build_request_data()
 
     def _build_request_data(self):
-        pass
+        # Convert original request data that was gotten from the kwargs of a
+        # method, and converts them into a payload that the server expects
+        #
+        self._req_data_dict = {}
+        for key, value in self._original_request_data.items():
+            if key not in BaseCharge.internal_to_external_field_map.keys():
+                raise RaveError(
+                    'Unkown key \'{}\' while trying to build request'.format(
+                        key))
+            self._req_data_dict[BaseCharge.internal_to_external_field_map[key]]\
+                = value
+
+        return self._req_data_dict
 
     def _can_use_pin_auth_model(self):
         pass
@@ -120,6 +140,8 @@ class BaseCharge:
         """
         Makes an API request to make the charge. This method encrypts the
         request data for you before sending the request to the server.
+        A card that was reconstructed by either calling retrieve or consume
+        cannot be charged a second time.
         """
         #Encrypt card details see
         #https://flutterwavedevelopers.readme.io/v1.0/reference#rave-encryption
@@ -134,23 +156,32 @@ class BaseCharge:
         raise NotImplemented('Charge not implemented in base class')
 
     def _send_charge_request(self, auth_model):
+        direct_charge_body = {
+            'PBFPubKey': self.auth_details.public_key,
+            'client': self.integrity_checksum,
+            'alg': '3DES-24'
+        }
+        return self._send_post(direct_charge_body)
+
+    def _send_post(self, body):
         pass
 
     def validate_charge_response(self):
-        raise NotImplemented("Validation of charge no implemented")
+        raise NotImplemented("Validation of charge not implemented")
 
     @classmethod
     def retrieve(cls, auth_details, gateway_ref=None, merchant_ref=None,
         ping_url=None):
         """
         Retrieves a charge resource from the API gateway. This class method
-        creates an instance of this class and tries it's best to reconstruct
-        what the initial request and response must have looked like when the
-        charge was first made.
+        creates an instance of this class that would be used for Validation
+        purposes. The charge method is not meant to be called on the
+        retrieved instance.
 
         Args:
             auth_details: The AuthDetails that will be used to make an
-                authenticated request to retrieve the card.
+                authenticated request to retrieve the card. And would also be
+                used to instantiate the new Charge.
         Kwargs:
             gateway_ref: (optional) The transaction reference the gateway
                 returned when the charge was initiated. If this is provided the
@@ -173,6 +204,29 @@ class BaseCharge:
         """
         pass
 
+    @classmethod
+    def consume(self, auth_details, data):
+        """
+        This is used when the VBVSECURECODE or the AVS_VBVSECURECODE auth
+        models were used in making a direct charge. Like the retrieve method,
+        this method is used to collect the response to a validate request,
+        but unlike the retrieve method, this does not make a call to the server
+        instead, it is used to consume the validation response that was sent
+        to your redirect_url body parameter when the direct charge call was
+        made.
+
+        Args:
+            auth_details: The authentication detail that will be used to
+                instantiate the new Charge instance.
+            data: The data that has been collected by your server and
+                transformed into a dict.
+
+        Returns:
+            BaseCharge: a Charge of the appropriate type that holds information
+            about the charge that was consumed.
+        """
+        pass
+
     def sanity_checks(self, amount, currency, status='success', charge_code=0,
         *args, **kwargs):
         """
@@ -189,3 +243,24 @@ class BaseCharge:
         Retrieves the list of Banks for a given country.
         """
         pass
+
+class CardCharge(BaseCharge):
+    def charge(self, ping_url=None, pin=None, *args, **kwargs):
+        """
+        Makes a charge request with to the api server. If this charge instance
+        was rebuilt by retreiving it from the server, i.e, it was not built
+        from scratch by calling create, a RaveChargeError will be raised.
+        """
+        if self.was_retrieved:
+            raise RaveChargeError(
+                'Cannot charge a card that was reconstructed. Use create.')
+
+        if not ping_url:
+            resp_data = self._send_charge_request()
+            if resp_data['SUGGESTED_AUTH'] == 'PIN' and not pin:
+                raise RaveError('Pin required for this transaction')
+
+            self._original_request_data.update({'SUGGESTED_AUTH': 'PIN',
+                'pin': pin})
+            self._build_request_data()
+            resp_data = self._send_charge_request()
