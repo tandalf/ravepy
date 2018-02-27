@@ -172,7 +172,7 @@ class BaseCharge:
     def _send_post(self, body):
         pass
 
-    def validate(self, otp):
+    def validate(self, otp, ping_url=None):
         """
         After a direct charge is made, the transaction will be in a pending
         state. Calling this method makes the actual charge. Calling this
