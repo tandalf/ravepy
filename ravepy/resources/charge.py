@@ -1,7 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
-from ravepy.exceptions.base import RaveError
-from ravepy.exceptions.charge import RavePinRequiredError, RaveChargeError
+from ravepy.utils.http import post
+from ravepy.exceptions.base import RaveError, RaveGracefullTimeoutError
+from ravepy.exceptions.charge import (
+    RavePinRequiredError, RaveChargeError
+)
+from ravepy.constants import NORMAL_CHARGE
 
 __metaclass__ = type
 
@@ -204,10 +208,8 @@ class BaseCharge:
             'client': self.integrity_checksum,
             'alg': '3DES-24'
         }
-        return self._send_post(direct_charge_body)
-
-    def _send_post(self, body):
-        pass
+        return post(self._auth_details.urls.DIRECT_CHARGE_URL,
+            direct_charge_body)
 
     def validate(self, otp, ping_url=None):
         """
@@ -217,8 +219,22 @@ class BaseCharge:
 
         Args:
             otp: the one time password that was sent to the paying user
+
+        Kwargs:
+            ping_url: If present, this is the url that will be used for polling
+                the validate request if a timeout response was initially
+                received.
+
+        Raises:
+            RaveGracefullTimeoutError: if a timeout response is sent from
+                the server. Read the docs for RaveGracefullTimeoutError for
+                info on how to handle this exception gracefully.
         """
-        raise NotImplemented("Validation of charge not implemented")
+        if ping_url:
+            self._send_validate_request_by_polling(otp)
+        else:
+            self._send_validate_request(otp)
+
 
     def _send_validate_request(self, otp):
         validate_request_body = {

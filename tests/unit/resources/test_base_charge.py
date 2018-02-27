@@ -46,12 +46,12 @@ def test__send_charge_request(sample_auth_details):
         new_callable=PropertyMock) as mocked_integrity_checksum:
         mocked_integrity_checksum.return_value = 'fakechecksum'
 
-        with patch('ravepy.resources.charge.BaseCharge._send_post') as send_post:
+        with patch('ravepy.resources.charge.post') as post:
             charge = BaseCharge(sample_auth_details)
             charge._send_charge_request()
-            send_post_call = call({
+            post_call = call(sample_auth_details.urls.DIRECT_CHARGE_URL, {
                 'PBFPubKey': sample_auth_details.public_key,
                 'client': 'fakechecksum',
                 'alg': '3DES-24'
             })
-            assert charge._send_post.call_args == send_post_call
+            assert post.call_args == post_call

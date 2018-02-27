@@ -9,7 +9,8 @@ from ravepy.resources.auth import AuthDetails
 @pytest.fixture(scope='module')
 def sample_auth_details():
     return AuthDetails('FLWSECK-123456c59c8ef06749e6a72bc90e34a1-X',
-        public_key='FLWPUBK-123456c59c8ef06749e6a72bc90e34a1-X')
+        public_key='FLWPUBK-123456c59c8ef06749e6a72bc90e34a1-X',
+        env='DEV')
 
 @pytest.fixture()
 def sample_request_data():
