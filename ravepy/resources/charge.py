@@ -52,7 +52,8 @@ class BaseCharge:
         self.was_retrieved = False
         self._original_request_data = None
         self._req_data_dict = None
-        self._res_data_dict = data
+        self._charge_res_data_dict = None
+        self._validation_resp_data_dict = None
         self._sorted_parameter_values = None
 
     @property
@@ -63,12 +64,12 @@ class BaseCharge:
         return self._req_data_dict
 
     @property
-    def response_data(self):
+    def charge_response_data(self):
         """
         Gets the JSON-like dict that was the response to the most charge
         request.
         """
-        return self._res_data_dict
+        return self._charge_res_data_dict
 
     @property
     def sorted_parameter_values(self):
@@ -166,22 +167,40 @@ class BaseCharge:
     def _send_post(self, body):
         pass
 
-    def validate_charge_response(self):
+    def validate(self, otp):
+        """
+        After a direct charge is made, the transaction will be in a pending
+        state. Calling this method makes the actual charge. Calling this
+        method for the preauth flow does nothing
+
+        Args:
+            otp: the one time password that was sent to the paying user
+        """
         raise NotImplemented("Validation of charge not implemented")
 
+    def capture(self):
+        """
+        Captures a charge that was created using the preauth transaction
+        flow.
+        """
+
     @classmethod
-    def retrieve(cls, auth_details, gateway_ref=None, merchant_ref=None,
-        ping_url=None):
+    def retrieve(cls, auth_details, charge_type, gateway_ref=None,
+        merchant_ref=None, ping_url=None):
         """
         Retrieves a charge resource from the API gateway. This class method
-        creates an instance of this class that would be used for Validation
-        purposes. The charge method is not meant to be called on the
-        retrieved instance.
+        creates an instance of this class that would be used for verification
+        purposes or for the sake of capturing in case the preauth was used
+        for initiating the charge. The charge method is not meant to be called
+        again on a retrieved instance.
 
         Args:
             auth_details: The AuthDetails that will be used to make an
                 authenticated request to retrieve the card. And would also be
                 used to instantiate the new Charge.
+            charge_type: The charge_type that was used to initialize the
+                charge the first time, can be either PRE_AUTH_CHARGE or
+                NORMAL_CHARGE.
         Kwargs:
             gateway_ref: (optional) The transaction reference the gateway
                 returned when the charge was initiated. If this is provided the
@@ -205,7 +224,7 @@ class BaseCharge:
         pass
 
     @classmethod
-    def consume(self, auth_details, data):
+    def retrieve_from_webhook(self, auth_details, data):
         """
         This is used when the VBVSECURECODE or the AVS_VBVSECURECODE auth
         models were used in making a direct charge. Like the retrieve method,
@@ -227,11 +246,11 @@ class BaseCharge:
         """
         pass
 
-    def sanity_checks(self, amount, currency, status='success', charge_code=0,
+    def verify(self, amount, currency, status='success', charge_code=0,
         *args, **kwargs):
         """
         Performs basic sanity checks on the charge. The charge should have
-        been initiated on the gateway before calling this method. More
+        been initiated on the payment gateway before calling this method. More
         concretely, it should have a transaction reference assigned to it at
         the point where this method will be called.
         """
