@@ -56,6 +56,10 @@ class BaseCharge:
         self._validation_resp_data_dict = None
         self._sorted_parameter_values = None
 
+        self._charge_type = None
+        self._gateway_ref = None
+        self._merchant_ref = None
+
     @property
     def request_data(self):
         """
@@ -183,6 +187,7 @@ class BaseCharge:
         Captures a charge that was created using the preauth transaction
         flow.
         """
+        raise NotImplemented("Capture is not implemented in base class")
 
     @classmethod
     def retrieve(cls, auth_details, charge_type, gateway_ref=None,
