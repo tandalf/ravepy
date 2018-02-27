@@ -146,7 +146,8 @@ class BaseCharge:
         Makes an API request to make the charge. This method encrypts the
         request data for you before sending the request to the server.
         A card that was reconstructed by either calling retrieve or consume
-        cannot be charged a second time.
+        cannot be charged a second time. More concretely, if was_retrieved
+        is set to True, this method will raise a RaveChargeError.
         """
         #Encrypt card details see
         #https://flutterwavedevelopers.readme.io/v1.0/reference#rave-encryption
@@ -175,7 +176,7 @@ class BaseCharge:
         """
         After a direct charge is made, the transaction will be in a pending
         state. Calling this method makes the actual charge. Calling this
-        method for the preauth flow does nothing
+        method for the preauth flow raises a RaveChargeError.
 
         Args:
             otp: the one time password that was sent to the paying user
@@ -185,7 +186,8 @@ class BaseCharge:
     def capture(self):
         """
         Captures a charge that was created using the preauth transaction
-        flow.
+        flow. Calling this method for the normal(non preauth) raises a
+        RaveChargeError
         """
         raise NotImplemented("Capture is not implemented in base class")
 
@@ -197,7 +199,8 @@ class BaseCharge:
         creates an instance of this class that would be used for verification
         purposes or for the sake of capturing in case the preauth was used
         for initiating the charge. The charge method is not meant to be called
-        again on a retrieved instance.
+        again on a retrieved instance. Sets was_retrieved to true on the
+        new instance.
 
         Args:
             auth_details: The AuthDetails that will be used to make an
@@ -237,7 +240,7 @@ class BaseCharge:
         but unlike the retrieve method, this does not make a call to the server
         instead, it is used to consume the validation response that was sent
         to your redirect_url body parameter when the direct charge call was
-        made.
+        made. Sets was_retrieved to true on the new instance.
 
         Args:
             auth_details: The authentication detail that will be used to
