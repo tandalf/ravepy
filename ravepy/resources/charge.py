@@ -54,6 +54,9 @@ class BaseCharge:
         self._req_data_dict = None
         self._charge_res_data_dict = None
         self._validation_resp_data_dict = None
+        self._preauth_resp_data = None
+        self._transaction_status_resp_data = None
+        self._raw_resp_data = None
         self._sorted_parameter_values = None
 
         self._charge_type = None
@@ -70,10 +73,43 @@ class BaseCharge:
     @property
     def charge_response_data(self):
         """
-        Gets the JSON-like dict that was the response to the most charge
+        Gets the JSON-like dict that was the response to a direct charge
         request.
         """
         return self._charge_res_data_dict
+
+    @property
+    def validate_response_data(self):
+        """
+        Gets the JSON-like dict that was the response to a validate request
+        for the charge.
+        """
+        return self._validation_resp_data_dict
+
+    @property
+    def preauth_response_data(self):
+        """
+        Gets the JSON-like dict that was the response to a preath card charge
+        request.
+        """
+        return self._preauth_resp_data
+
+    @property
+    def transaction_status_response_data(self):
+        """
+        Gets the JSON-like dict that was the most recent response to a
+        transaction status request.
+        """
+        return self._transaction_status_resp_data
+
+    @property
+    def raw_response_data(self):
+        """
+        Gets the JSON-like dict that was the response to the most recent
+        request that was made on this instance. Unlike the other response data
+        attributes, this one has not be cleaned or modified in any way.
+        """
+        return self._raw_resp_data
 
     @property
     def sorted_parameter_values(self):
@@ -108,12 +144,13 @@ class BaseCharge:
         """
         pass
 
-    def create(self, *args, **kwargs):
+    def create(self, charge_type=NORMAL_CHARGE, *args, **kwargs):
         """
         Create a new charge. On concrete subclasses, this might be a Card or
         an Account charge. When a charge is created like this, you can then
         call .charge() on it to initiate the charge.
         """
+        self._charge_type = charge_type
         self._original_request_data = kwargs
         self._build_request_data()
 
@@ -182,6 +219,20 @@ class BaseCharge:
             otp: the one time password that was sent to the paying user
         """
         raise NotImplemented("Validation of charge not implemented")
+
+    def _send_validate_request(self, otp):
+        validate_request_body = {
+            'PBFPubKey': self._auth_details.public_key,
+            'transaction_reference': self._gateway_ref,
+            'otp': otp,
+        }
+        resp = self._send_post(validate_request_body)
+
+        # Check if a polling is required and raise a valid exception
+
+    def _send_validate_request_by_polling(self, otp, ping_url):
+        #if no ping_url in data, return response else reraise error
+        pass
 
     def capture(self):
         """
@@ -260,7 +311,9 @@ class BaseCharge:
         Performs basic sanity checks on the charge. The charge should have
         been initiated on the payment gateway before calling this method. More
         concretely, it should have a transaction reference assigned to it at
-        the point where this method will be called.
+        the point where this method will be called. Either the
+        self.validate_response_data or self.preauth_response_data should be
+        available by the time this method is called.
         """
         pass
 
