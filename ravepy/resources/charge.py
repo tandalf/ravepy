@@ -5,7 +5,7 @@ from ravepy.exceptions.base import RaveError, RaveGracefullTimeoutError
 from ravepy.exceptions.charge import (
     RavePinRequiredError, RaveChargeError
 )
-from ravepy.constants import NORMAL_CHARGE, CARD, ACCOUNT
+from ravepy.constants import NORMAL_CHARGE, PRE_AUTH_CHARGE, CARD, ACCOUNT
 
 __metaclass__ = type
 
@@ -58,6 +58,7 @@ class BaseCharge:
         self._req_data_dict = None
         self._charge_res_data_dict = None
         self._validation_resp_data_dict = None
+        self._verification_resp_data_dict = None
         self._preauth_resp_data = None
         self._transaction_status_resp_data = None
         self._raw_resp_data = None
@@ -66,6 +67,8 @@ class BaseCharge:
         self._charge_type = None
         self._gateway_ref = None
         self._merchant_ref = None
+
+        self._is_preauth = False
 
     @property
     def request_data(self):
@@ -89,6 +92,14 @@ class BaseCharge:
         for the charge.
         """
         return self._validation_resp_data_dict
+
+    @property
+    def verification_response_data(self):
+        """
+        Gets the JSON-like dict that was the response to a validate request
+        for the charge.
+        """
+        return self._verification_resp_data_dict
 
     @property
     def preauth_response_data(self):
@@ -271,10 +282,7 @@ class BaseCharge:
                 the server. Read the docs for RaveGracefullTimeoutError for
                 info on how to handle this exception gracefully.
         """
-        if ping_url:
-            self._send_validate_request_by_polling(otp)
-        else:
-            self._send_validate_request(otp)
+        raise NotImplemented('Validate not implemented in base class')
 
 
     def _send_validate_request(self, otp):
@@ -300,7 +308,7 @@ class BaseCharge:
         raise NotImplemented("Capture is not implemented in base class")
 
     @classmethod
-    def retrieve(cls, auth_details, charge_type, gateway_ref=None,
+    def retrieve(cls, auth_details, charge_type=None, gateway_ref=None,
         merchant_ref=None, ping_url=None):
         """
         Retrieves a charge resource from the API gateway. This class method
@@ -314,10 +322,10 @@ class BaseCharge:
             auth_details: The AuthDetails that will be used to make an
                 authenticated request to retrieve the card. And would also be
                 used to instantiate the new Charge.
+        Kwargs:
             charge_type: The charge_type that was used to initialize the
                 charge the first time, can be either PRE_AUTH_CHARGE or
                 NORMAL_CHARGE.
-        Kwargs:
             gateway_ref: (optional) The transaction reference the gateway
                 returned when the charge was initiated. If this is provided the
                 normal requery transaction verification flow is used to
@@ -394,7 +402,7 @@ class CardCharge(BaseCharge):
         if not ping_url:
             try:
                 resp_data = self._send_request_no_poll(req_data)
-                if resp_data['SUGGESTED_AUTH'] == 'PIN':
+                if resp_data['data']['SUGGESTED_AUTH'] == 'PIN':
                     if not pin:
                         raise RaveError('Pin required for this transaction')
                     else:
@@ -415,7 +423,84 @@ class CardCharge(BaseCharge):
         else:
             resp_data = self._send_request_by_polling(ping_url)
 
+        self._original_request_data = req_data
+        self._charge_res_data_dict = resp_data
+        self._raw_resp_data = resp_data
+        self._gateway_ref = resp_data['data']['flwRef']
+        self._merchant_ref = resp_data['data']['txRef']
         return resp_data
+
+    def validate(self, otp, ping_url=None):
+        if self._charge_type==PRE_AUTH_CHARGE or self._preauth_resp_data:
+            raise RaveChargeError('Cannot call the calidate response for '\
+                'a preauth flow. Call capture instead')
+
+        if ping_url:
+            resp_data = self._send_request_by_polling(ping_url)
+        else:
+            req_data = {
+                'PBFPubKey': self._auth_details.public_key,
+                'transaction_reference': self._gateway_ref,
+                'otp': otp
+            }
+            resp_data = self._send_request_no_poll(
+                self._auth_details.urls.VALIDATE_CARD_CHARGE_URL, req_data)
+
+        self._original_request_data = req_data
+        self._validation_resp_data_dict = resp_data
+        self._raw_resp_data = resp_data
+
+    @classmethod
+    def retrieve(cls, auth_details, charge_type=None, gateway_ref=None,
+        merchant_ref=None, use_merchant_ref=False, ping_url=None):
+        if not charge_type:
+            raise RaveChargeError('Charge type should be specified. Options '\
+                'are {} or {}.'.format(NORMAL_CHARGE, PRE_AUTH_CHARGE))
+        if charge_type != PRE_AUTH_CHARGE and\
+            ((gateway_ref or merchant_ref) == False):
+            raise RaveChargeError('The gateway_ref (flwRef), or the '\
+                'merchant_ref you used must be provided except when using '\
+                'preauth flow')
+
+        if ping_url:
+            # TODO: work on polling case
+            pass
+        else:
+            charge = CardCharge(auth_details)
+            req_data = {
+                'SECKEY': auth_details.secret_key
+            }
+            if use_merchant_ref:
+                req_data.update({
+                    'txref': merchant_ref,
+                    'last_attempt': 1,
+                    'only_successful': 1})
+                resp_data = charge._send_request_no_poll(
+                    auth_details.urls.TRANSACTION_VERIFICATION_XREQUERY_URL,
+                    req_data)
+            else:
+                resp_data = req_data.update({
+                    'flw_ref': gateway_ref,
+                    'normalize': 1
+                })
+                resp_data = charge._send_request_no_poll(
+                    auth_details.urls.TRANSACTION_VERIFICATION_URL, req_data)
+
+        charge._gateway_ref = gateway_ref
+        charge._merchant_ref = merchant_ref
+        charge._raw_resp_data = resp_data
+        charge._verification_resp_data_dict = resp_data
+        charge.was_retrieved = True
+        return charge
+
+    def retrieve_from_webhook(cls, auth_details, data):
+        charge = CardCharge(auth_details, data=data)
+        charge._gateway_ref = resp_data['data']['flwRef']
+        charge._merchant_ref = resp_data['data'].get('txRef')
+        charge._raw_resp_data = resp_data
+        charge.was_retrieved = True
+        return charge
+
 
 class AccountCharge(BaseCharge):
     def charge(self, ping_url=None, pin=None, *args, **kwargs):
@@ -445,7 +530,7 @@ class ChargeFactory:
         charge.create(*args, **kwargs)
         return charge
 
-    def retreive(self, source_type=CARD, *args, **kwargs):
+    def retrieve(self, source_type=CARD, *args, **kwargs):
         """
         Performs the same actions as it's base class but automatically creates
         the right type of charge instance based on the source_type param.
@@ -453,16 +538,16 @@ class ChargeFactory:
             source_type: The type of charge to instantiate. Default is CARD.
         """
         if source_type == CARD:
-            charge = CardCharge.retreive(*args, **kwargs)
+            charge = CardCharge.retrieve(*args, **kwargs)
         elif source_type == ACCOUNT:
-            charge = AccountCharge.retreive(*args, **kwargs)
+            charge = AccountCharge.retrieve(*args, **kwargs)
         else:
             raise RaveChargeError('Invalid source type. Must be {} or {}'\
                 .format(CARD, ACCOUNT))
 
         return charge
 
-        def retreive_from_webhook(self, source_type=CARD, *args, **kwargs):
+        def retrieve_from_webhook(self, source_type=CARD, *args, **kwargs):
             """
             Performs the same actions as it's base class but automatically creates
             the right type of charge instance based on the source_type param.
@@ -470,10 +555,10 @@ class ChargeFactory:
                 source_type: The type of charge to instantiate. Default is CARD.
             """
             if source_type == CARD:
-                charge = CardCharge.retreive_from_webhook(*args,
+                charge = CardCharge.retrieve_from_webhook(*args,
                     **kwargs)
             elif source_type == ACCOUNT:
-                charge = AccountCharge.retreive_from_webhook(*args,
+                charge = AccountCharge.retrieve_from_webhook(*args,
                     **kwargs)
             else:
                 raise RaveChargeError('Invalid source type. Must be {} or {}'\
