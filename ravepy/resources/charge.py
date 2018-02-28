@@ -134,7 +134,6 @@ class BaseCharge:
         list has been sorted in a chronological order. Parameter values are
         gotten from this.request_data.
         """
-        print(self.charge_request_data)
         if not self._sorted_parameter_values:
             self._sorted_parameter_values = []
             for key in sorted(self.charge_request_data.keys()):
@@ -170,8 +169,9 @@ class BaseCharge:
         """
         self._charge_type = charge_type
         self._original_request_data = kwargs
-        self._original_request_data['pub_key'] =\
-            self._auth_details.public_key
+        self._original_request_data['pub_key'] = self._auth_details.public_key
+        if kwargs.get('pin'):
+            self._original_request_data.update({'suggested_auth': 'PIN'})
         self._build_charge_request_data()
 
     def _build_charge_request_data(self):
@@ -222,9 +222,6 @@ class BaseCharge:
 
     def _get_direct_charge_request_data(self):
         client = self._auth_details.encrypt_data(json.dumps(
-            self._charge_req_data_dict))
-        print('post client')
-        print(json.dumps(
             self._charge_req_data_dict))
         return {
             'PBFPubKey': self._auth_details.public_key,
@@ -411,12 +408,13 @@ class CardCharge(BaseCharge):
                 resp_data = self._send_request_no_poll(
                     self._auth_details.urls.DIRECT_CHARGE_URL ,req_data)
                 if resp_data['data'].get('suggested_auth') == 'PIN':
+                    pin = pin if pin else req_data.get('pin')
                     if not pin:
-                        raise RaveError('Pin required for this transaction')
+                        raise RaveChargeError('Pin required for this transaction')
                     else:
-                        self._original_request_data.update({'SUGGESTED_AUTH': 'PIN',
+                        self._original_request_data.update({'suggested_auth': 'PIN',
                             'pin': pin})
-                        self._build_request_data()
+                        self._build_charge_request_data()
                         req_data = self._get_direct_charge_request_data()
                         resp_data = self._send_request_no_poll(
                             self._auth_details.urls.DIRECT_CHARGE_URL, req_data)
