@@ -2,7 +2,8 @@ import os
 
 import pytest
 
-from ravepy.constants import VBVSECURECODE
+import ravepy
+from ravepy.constants import VBVSECURECODE, CARD
 from ravepy.resources.auth import AuthDetails
 
 @pytest.fixture()
@@ -137,3 +138,36 @@ def btn1_auth_details(required_envs):
     secret_key = required_envs['btn1_secret_key']
     public_key = required_envs['btn1_public_key']
     return AuthDetails(secret_key, public_key=public_key, env='DEV')
+
+@pytest.fixture()
+def direct_mastercard_charge_with_pin(btn1_auth_details,
+    partial_charge_request1, mastercard):
+    ravepy.set_auth(btn1_auth_details)
+    req_kwargs = {}
+    req_kwargs.update(partial_charge_request1)
+    req_kwargs.update(mastercard)
+    otp = req_kwargs.pop('otp')
+    #pin = req_kwargs.pop('pin')
+    return ravepy.Charge.create(source_type=CARD, **req_kwargs)
+
+@pytest.fixture()
+def direct_vervecard_charge_with_pin(btn1_auth_details,
+    partial_charge_request1, vervecard):
+    ravepy.set_auth(btn1_auth_details)
+    req_kwargs = {}
+    req_kwargs.update(partial_charge_request1)
+    req_kwargs.update(vervecard)
+    otp = req_kwargs.pop('otp')
+    #pin = req_kwargs.pop('pin')
+    return ravepy.Charge.create(source_type=CARD, **req_kwargs)
+
+@pytest.fixture()
+def direct_mastercard_charge_without_pin(btn1_auth_details,
+    partial_charge_request1, mastercard):
+    ravepy.set_auth(btn1_auth_details)
+    req_kwargs = {}
+    req_kwargs.update(partial_charge_request1)
+    req_kwargs.update(mastercard)
+    otp = req_kwargs.pop('otp')
+    pin = req_kwargs.pop('pin')
+    return ravepy.Charge.create(source_type=CARD, **req_kwargs)
