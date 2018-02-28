@@ -33,18 +33,6 @@ AVS_VBVSECURECODE = 'AVS_VBVSECURECODE'
 PRE_AUTH_CHARGE = 'preauth'
 NORMAL_CHARGE = 'normal'
 
-# Charge urls
-DIRECT_CHARGE_URL = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
-    '/flwv3-pug/getpaidx/api/charge'
-VALIDATE_CARD_CHARGE_URL = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
-    '/flwv3-pug/getpaidx/api/validatecharge'
-VALIDATE_ACCOUNT_CHARGE_URL = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.'\
-    'com/flwv3-pug/getpaidx/api/validate'
-TRANSACTION_VERIFICATION_URL = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk'\
-    '.com/flwv3-pug/getpaidx/api/verify'
-TRANSACTION_VERIFICATION_XREQUERY_URL = 'http://flw-pms-dev.eu-west-1.'\
-    'elasticbeanstalk.com/flwv3-pug/getpaidx/api/xrequery'
-PREAUTH_CHARGE_URL = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
-    '/flwv3-pug/getpaidx/api/charge'
-PREAUTH_CAPTURE_URL = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
-    '/flwv3-pug/getpaidx/api/capture'
+#source_type
+CARD='CARD'
+ACCOUNT='ACCOUNT'

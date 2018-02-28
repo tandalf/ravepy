@@ -5,7 +5,7 @@ from ravepy.exceptions.base import RaveError, RaveGracefullTimeoutError
 from ravepy.exceptions.charge import (
     RavePinRequiredError, RaveChargeError
 )
-from ravepy.constants import NORMAL_CHARGE
+from ravepy.constants import NORMAL_CHARGE, CARD, ACCOUNT
 
 __metaclass__ = type
 
@@ -200,7 +200,9 @@ class BaseCharge:
 
         #Remember to set auth_url in case you need to
 
-        raise NotImplemented('Charge not implemented in base class')
+        if self.was_retrieved:
+            raise RaveChargeError(
+                'Cannot charge a card that was reconstructed. Use create.')
 
     def _send_charge_request(self):
         direct_charge_body = {
@@ -347,10 +349,7 @@ class CardCharge(BaseCharge):
         was rebuilt by retreiving it from the server, i.e, it was not built
         from scratch by calling create, a RaveChargeError will be raised.
         """
-        if self.was_retrieved:
-            raise RaveChargeError(
-                'Cannot charge a card that was reconstructed. Use create.')
-
+        super(CardCharge, self).charge(*args, **kwargs)
         if not ping_url:
             resp_data = self._send_charge_request()
             if resp_data['SUGGESTED_AUTH'] == 'PIN' and not pin:
@@ -360,3 +359,67 @@ class CardCharge(BaseCharge):
                 'pin': pin})
             self._build_request_data()
             resp_data = self._send_charge_request()
+
+class AccountCharge(BaseCharge):
+    def charge(self, ping_url=None, pin=None, *args, **kwargs):
+        super(AccountCharge, self).charge(*args, **kwargs)
+        raise NotImplemented()
+
+class ChargeFactory:
+    def __init__(self, data=None, *args, **kwargs):
+        self._data = data
+        self._args = args
+        self._kwargs = kwargs
+        self._charge = None
+        self._source_type = None
+
+    def create(self, source_type=CARD, *args, **kwargs):
+        self._source_type = source_type
+        if source_type == CARD:
+            charge = CardCharge(self._auth_details, *self._args,
+                **self._kwargs)
+        elif source_type == ACCOUNT:
+            charge = AccountCharge(self._auth_details, *self._args,
+                **self._kwargs)
+        else:
+            raise RaveChargeError('Invalid source type. Must be {} or {}'\
+                .format(CARD, ACCOUNT))
+
+        charge.create(*args, **kwargs)
+        return charge
+
+    def retreive(self, source_type=CARD, *args, **kwargs):
+        """
+        Performs the same actions as it's base class but automatically creates
+        the right type of charge instance based on the source_type param.
+        Kwargs:
+            source_type: The type of charge to instantiate. Default is CARD.
+        """
+        if source_type == CARD:
+            charge = CardCharge.retreive(*args, **kwargs)
+        elif source_type == ACCOUNT:
+            charge = AccountCharge.retreive(*args, **kwargs)
+        else:
+            raise RaveChargeError('Invalid source type. Must be {} or {}'\
+                .format(CARD, ACCOUNT))
+
+        return charge
+
+        def retreive_from_webhook(self, source_type=CARD, *args, **kwargs):
+            """
+            Performs the same actions as it's base class but automatically creates
+            the right type of charge instance based on the source_type param.
+            Kwargs:
+                source_type: The type of charge to instantiate. Default is CARD.
+            """
+            if source_type == CARD:
+                charge = CardCharge.retreive_from_webhook(*args,
+                    **kwargs)
+            elif source_type == ACCOUNT:
+                charge = AccountCharge.retreive_from_webhook(*args,
+                    **kwargs)
+            else:
+                raise RaveChargeError('Invalid source type. Must be {} or {}'\
+                    .format(CARD, ACCOUNT))
+
+            return charge
