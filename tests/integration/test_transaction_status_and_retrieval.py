@@ -19,3 +19,16 @@ def test_retrieve_mastercard(direct_mastercard_charge_with_pin,
         gateway_ref=gateway_ref, source_type=CARD)
     assert ch.was_retrieved == True
     assert ch.verification_response_data['data']['flw_ref'] == gateway_ref
+
+def test_retrieve_mastercard_xrequery(direct_mastercard_charge_with_pin,
+    mastercard):
+    ch = direct_mastercard_charge_with_pin
+    ch.charge()
+    auth_details = ch._auth_details
+    merchant_ref = ch.charge_response_data['data']['txRef']
+
+    #perform the normal transation status retrieval
+    ch = ravepy.Charge.retrieve(auth_details, charge_type=NORMAL_CHARGE,
+        merchant_ref=merchant_ref, use_merchant_ref=True, source_type=CARD)
+    assert ch.was_retrieved == True
+    assert ch.verification_response_data['message'] == 'Tx Fetched'
