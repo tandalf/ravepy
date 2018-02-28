@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+import json
 
 from ravepy.utils.http import post
 from ravepy.exceptions.base import RaveError, RaveGracefullTimeoutError
@@ -27,7 +28,7 @@ class BaseCharge:
 
         #Card fields
         'cardno': 'cardno',
-        'ccv': 'ccv',
+        'cvv': 'cvv',
         'expiry_month': 'expirymonth',
         'expiry_year': 'expiryyear',
         'pin': 'pin',
@@ -55,7 +56,7 @@ class BaseCharge:
         self._auth_details = auth_details
         self.was_retrieved = False
         self._original_request_data = None
-        self._req_data_dict = None
+        self._charge_req_data_dict = None
         self._charge_res_data_dict = None
         self._validation_resp_data_dict = None
         self._verification_resp_data_dict = None
@@ -71,11 +72,11 @@ class BaseCharge:
         self._is_preauth = False
 
     @property
-    def request_data(self):
+    def charge_request_data(self):
         """
         Gets the JSON-like dict that will be the body of the payment request.
         """
-        return self._req_data_dict
+        return self._charge_req_data_dict
 
     @property
     def charge_response_data(self):
@@ -133,10 +134,11 @@ class BaseCharge:
         list has been sorted in a chronological order. Parameter values are
         gotten from this.request_data.
         """
+        print(self.charge_request_data)
         if not self._sorted_parameter_values:
             self._sorted_parameter_values = []
-            for key in sorted(self.request_data.keys()):
-                self._sorted_parameter_values.append(self.request_data[key])
+            for key in sorted(self.charge_request_data.keys()):
+                self._sorted_parameter_values.append(self.charge_request_data[key])
 
         return self._sorted_parameter_values
 
@@ -168,22 +170,24 @@ class BaseCharge:
         """
         self._charge_type = charge_type
         self._original_request_data = kwargs
-        self._build_request_data()
+        self._original_request_data['pub_key'] =\
+            self._auth_details.public_key
+        self._build_charge_request_data()
 
-    def _build_request_data(self):
+    def _build_charge_request_data(self):
         # Convert original request data that was gotten from the kwargs of a
         # method, and converts them into a payload that the server expects
         #
-        self._req_data_dict = {}
+        self._charge_req_data_dict = {}
         for key, value in self._original_request_data.items():
             if key not in BaseCharge.internal_to_external_field_map.keys():
                 raise RaveError(
                     'Unkown key \'{}\' while trying to build request'.format(
                         key))
-            self._req_data_dict[BaseCharge.internal_to_external_field_map[key]]\
+            self._charge_req_data_dict[BaseCharge.internal_to_external_field_map[key]]\
                 = value
 
-        return self._req_data_dict
+        return self._charge_req_data_dict
 
     def _can_use_pin_auth_model(self):
         pass
@@ -217,16 +221,20 @@ class BaseCharge:
                 'Cannot charge a card that was reconstructed. Use create.')
 
     def _get_direct_charge_request_data(self):
+        client = self._auth_details.encrypt_data(json.dumps(
+            self._charge_req_data_dict))
+        print('post client')
+        print(json.dumps(
+            self._charge_req_data_dict))
         return {
             'PBFPubKey': self._auth_details.public_key,
-            'client': self.integrity_checksum,
+            'client': client,
             'alg': '3DES-24'
         }
 
-    def _send_request_no_poll(self, req_data, switch_to_polling=False):
+    def _send_request_no_poll(self, url, req_data, switch_to_polling=False):
         if switch_to_polling:
-            resp_data = post(self._auth_details.urls.DIRECT_CHARGE_URL +\
-                '?use_polling=1', req_data)
+            resp_data = post(url + '?use_polling=1', req_data)
             if resp_data['status'] == 'success':
                 ping_url = resp_data['data']['ping_url']
                 e = RaveGracefullTimeoutError("Poll for response on url {}"\
@@ -235,8 +243,7 @@ class BaseCharge:
             else:
                 raise RaveChargeError('Could not switch to polling')
         else:
-            resp_data = post(self._auth_details.urls.DIRECT_CHARGE_URL,
-                req_data)
+            resp_data = post(url, req_data)
             if resp_data['status'] == 'error' and\
                 resp_data['data'].get('status') == 'failed':
                 e = RaveGracefullTimeoutError(
@@ -401,8 +408,9 @@ class CardCharge(BaseCharge):
 
         if not ping_url:
             try:
-                resp_data = self._send_request_no_poll(req_data)
-                if resp_data['data']['SUGGESTED_AUTH'] == 'PIN':
+                resp_data = self._send_request_no_poll(
+                    self._auth_details.urls.DIRECT_CHARGE_URL ,req_data)
+                if resp_data['data'].get('suggested_auth') == 'PIN':
                     if not pin:
                         raise RaveError('Pin required for this transaction')
                     else:
@@ -410,12 +418,14 @@ class CardCharge(BaseCharge):
                             'pin': pin})
                         self._build_request_data()
                         req_data = self._get_direct_charge_request_data()
-                        resp_data = self._send_request_no_poll(req_data)
+                        resp_data = self._send_request_no_poll(
+                            self._auth_details.urls.DIRECT_CHARGE_URL, req_data)
 
             except RaveGracefullTimeoutError as e:
                 ping_url = e.ping_url if e.ping_url else ping_url
                 if e.start_polling:
-                    resp_data = self._send_request_no_poll(req_data,
+                    resp_data = self._send_request_no_poll(
+                        self._auth_details.urls.DIRECT_CHARGE_URL, req_data,
                         switcht_to_polling=True)
                 else:
                     raise e

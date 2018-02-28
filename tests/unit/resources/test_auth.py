@@ -22,13 +22,9 @@ def test_get_encryption_key(sample_auth_details):
 def test_encrypt_data(sample_auth_details):
     plain_text = 'ioe98i3g5n9wpn5gw935thq93hpt48hq39848q34ijoiqj4jn4'
     #implementation details from official web api docs
-    md5Key = hashlib.md5(
-        sample_auth_details.encryption_key.encode("utf-8")).digest()
-    md5Key = md5Key + md5Key[0:8]
-
     blockSize = 8
     padDiff = blockSize - (len(plain_text) % blockSize)
-    cipher = DES3.new(md5Key, DES3.MODE_ECB)
+    cipher = DES3.new(sample_auth_details.encryption_key, DES3.MODE_ECB)
 
     new_plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
     encrypted = base64.b64encode(cipher.encrypt(new_plain_text))

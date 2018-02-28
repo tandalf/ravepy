@@ -42,13 +42,9 @@ class AuthDetails:
         Encrypts a card or account request data that would be used to make a
         charge.
         """
-        #implementation details from official web api docs
-        md5Key = hashlib.md5(self.encryption_key.encode("utf-8")).digest()
-        md5Key = md5Key + md5Key[0:8]
-
         blockSize = 8
         padDiff = blockSize - (len(plain_text) % blockSize)
-        cipher = DES3.new(md5Key, DES3.MODE_ECB)
+        cipher = DES3.new(self.encryption_key, DES3.MODE_ECB)
 
         plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
         return base64.b64encode(cipher.encrypt(plain_text))

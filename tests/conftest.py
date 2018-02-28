@@ -4,6 +4,7 @@ import hashlib
 
 import pytest
 
+from ravepy import constants
 from ravepy.resources.auth import AuthDetails
 
 @pytest.fixture(scope='module')
@@ -36,14 +37,30 @@ def sample_integrity_checksum(sample_auth_details, sample_request_data):
 
     plain_text = sample_auth_details.secret_key +\
         ''.join(sorted_parameter_values)
-    #implementation details from official web api docs
-    md5Key = hashlib.md5(
-        sample_auth_details.encryption_key.encode("utf-8")).digest()
-    md5Key = md5Key + md5Key[0:8]
-
     blockSize = 8
     padDiff = blockSize - (len(plain_text) % blockSize)
-    cipher = DES3.new(md5Key, DES3.MODE_ECB)
+    cipher = DES3.new(sample_auth_details.encryption_key, DES3.MODE_ECB)
 
     new_plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
     return base64.b64encode(cipher.encrypt(new_plain_text))
+
+
+#Integration tests
+@pytest.fixture()
+def partial_charge_request1():
+    """
+    Charge request kwargs that will contain most of the neccesary data that is
+    needed to make a local card charge transaction.
+    """
+    return {
+        'currency': constants.NGN,
+        'country': constants.NIGERIA,
+        'amount': '450',
+        'email': 'tim@live.com',
+        'phone_number': '08081111111',
+        'first_name': 'Timothy',
+        'last_name': 'Ebiuwhe',
+        'ip_address': '103.238.105.185',
+        'merchant_transaction_ref': 'MXX-ASC-4578',
+        'device_fingerprint': '69e6b7f0sb72037aa8428b70fbe03986c'
+    }
