@@ -21,6 +21,8 @@ class RaveGracefullTimeoutError(RaveError):
     """
     ping_url = None
     wait = 25
+    status = None
+    start_polling = False
 
 class RaveChargeError(RaveError):
     """

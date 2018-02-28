@@ -41,17 +41,18 @@ def test__build_request_data(sample_request_data, sample_original_request_data,\
         assert value ==\
             charge._original_request_data[inv_map[key]]
 
-def test__send_charge_request(sample_auth_details):
+def test__send_request_no_poll(sample_auth_details):
     with patch('ravepy.resources.charge.BaseCharge.integrity_checksum',\
         new_callable=PropertyMock) as mocked_integrity_checksum:
         mocked_integrity_checksum.return_value = 'fakechecksum'
 
         with patch('ravepy.resources.charge.post') as post:
             charge = BaseCharge(sample_auth_details)
-            charge._send_charge_request()
-            post_call = call(sample_auth_details.urls.DIRECT_CHARGE_URL, {
+            data = {
                 'PBFPubKey': sample_auth_details.public_key,
                 'client': 'fakechecksum',
                 'alg': '3DES-24'
-            })
+            }
+            charge._send_request_no_poll(data)
+            post_call = call(sample_auth_details.urls.DIRECT_CHARGE_URL, data)
             assert post.call_args == post_call

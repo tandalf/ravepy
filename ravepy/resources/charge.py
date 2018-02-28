@@ -137,7 +137,8 @@ class BaseCharge:
         integrity checksum is computed from the request_data property of the
         current charge.
         """
-        plain_text = self._auth_details.secret_key + ''.join(self.sorted_parameter_values)
+        plain_text = self._auth_details.secret_key + ''.join(
+            self.sorted_parameter_values)
         return self._auth_details.encrypt_data(plain_text)
 
     @property
@@ -204,14 +205,52 @@ class BaseCharge:
             raise RaveChargeError(
                 'Cannot charge a card that was reconstructed. Use create.')
 
-    def _send_charge_request(self):
-        direct_charge_body = {
+    def _get_direct_charge_request_data(self):
+        return {
             'PBFPubKey': self._auth_details.public_key,
             'client': self.integrity_checksum,
             'alg': '3DES-24'
         }
-        return post(self._auth_details.urls.DIRECT_CHARGE_URL,
-            direct_charge_body)
+
+    def _send_request_no_poll(self, req_data, switch_to_polling=False):
+        if switch_to_polling:
+            resp_data = post(self._auth_details.urls.DIRECT_CHARGE_URL +\
+                '?use_polling=1', req_data)
+            if resp_data['status'] == 'success':
+                ping_url = resp_data['data']['ping_url']
+                e = RaveGracefullTimeoutError("Poll for response on url {}"\
+                    .format(ping_url))
+                e.ping_url = ping_url
+            else:
+                raise RaveChargeError('Could not switch to polling')
+        else:
+            resp_data = post(self._auth_details.urls.DIRECT_CHARGE_URL,
+                req_data)
+            if resp_data['status'] == 'error' and\
+                resp_data['data'].get('status') == 'failed':
+                e = RaveGracefullTimeoutError(
+                    "Timeout while sending charge request. Please switch to"\
+                    " polling.")
+                e.start_polling = True
+                raise e
+
+        return resp_data
+
+    def _send_request_by_polling(self, ping_url):
+        resp_data = get(ping_url)
+        ping_url = resp_data['data'].get('ping_url')
+        success_data = resp_data['data'].get('response')
+        data_status = resp_data['data'].get('status')
+
+        if data_status == 'completed':
+            return json.loads(success_data)
+        if data_status == 'pending':
+            e = RaveGracefullTimeoutError('Transaction pending')
+            e.status = 'pending'
+        else:
+            e = RaveGracefullTimeoutError('Transaction failed. Status: {}'\
+                .format(data_status))
+            e.status = data_status
 
     def validate(self, otp, ping_url=None):
         """
@@ -350,15 +389,33 @@ class CardCharge(BaseCharge):
         from scratch by calling create, a RaveChargeError will be raised.
         """
         super(CardCharge, self).charge(*args, **kwargs)
-        if not ping_url:
-            resp_data = self._send_charge_request()
-            if resp_data['SUGGESTED_AUTH'] == 'PIN' and not pin:
-                raise RaveError('Pin required for this transaction')
+        req_data = self._get_direct_charge_request_data()
 
-            self._original_request_data.update({'SUGGESTED_AUTH': 'PIN',
-                'pin': pin})
-            self._build_request_data()
-            resp_data = self._send_charge_request()
+        if not ping_url:
+            try:
+                resp_data = self._send_request_no_poll(req_data)
+                if resp_data['SUGGESTED_AUTH'] == 'PIN':
+                    if not pin:
+                        raise RaveError('Pin required for this transaction')
+                    else:
+                        self._original_request_data.update({'SUGGESTED_AUTH': 'PIN',
+                            'pin': pin})
+                        self._build_request_data()
+                        req_data = self._get_direct_charge_request_data()
+                        resp_data = self._send_request_no_poll(req_data)
+
+            except RaveGracefullTimeoutError as e:
+                ping_url = e.ping_url if e.ping_url else ping_url
+                if e.start_polling:
+                    resp_data = self._send_request_no_poll(req_data,
+                        switcht_to_polling=True)
+                else:
+                    raise e
+
+        else:
+            resp_data = self._send_request_by_polling(ping_url)
+
+        return resp_data
 
 class AccountCharge(BaseCharge):
     def charge(self, ping_url=None, pin=None, *args, **kwargs):
