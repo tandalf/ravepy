@@ -532,26 +532,32 @@ class ChargeFactory:
             charge = AccountCharge(self._auth_details, *self._args,
                 **self._kwargs)
         else:
-            raise RaveChargeError('Invalid source type. Must be {} or {}'\
-                .format(CARD, ACCOUNT))
+            raise RaveChargeError('Invalid source type. Must be {} or {} not {}'\
+                .format(CARD, ACCOUNT, source_type))
 
         charge.create(*args, **kwargs)
         return charge
 
-    def retrieve(self, source_type=CARD, *args, **kwargs):
+    def retrieve(self, auth_details, charge_type=None, gateway_ref=None,
+        merchant_ref=None, use_merchant_ref=False, ping_url=None,
+        source_type=None):
         """
         Performs the same actions as it's base class but automatically creates
         the right type of charge instance based on the source_type param.
         Kwargs:
             source_type: The type of charge to instantiate. Default is CARD.
         """
+        print('source_type')
+        print(source_type)
         if source_type == CARD:
-            charge = CardCharge.retrieve(*args, **kwargs)
+            charge = CardCharge.retrieve(auth_details, charge_type,
+                gateway_ref, merchant_ref, use_merchant_ref, ping_url)
         elif source_type == ACCOUNT:
-            charge = AccountCharge.retrieve(*args, **kwargs)
+            charge = AccountCharge.retrieve(auth_details, charge_type,
+                gateway_ref, merchant_ref, use_merchant_ref, ping_url)
         else:
-            raise RaveChargeError('Invalid source type. Must be {} or {}'\
-                .format(CARD, ACCOUNT))
+            raise RaveChargeError('Invalid source type. Must be {} or {} not {}'\
+                .format(CARD, ACCOUNT, source_type))
 
         return charge
 
