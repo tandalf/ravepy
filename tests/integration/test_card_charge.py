@@ -29,3 +29,10 @@ def test_direct_charge_vervecard_with_pin(direct_vervecard_charge_with_pin,
     ch = direct_vervecard_charge_with_pin
     ch.charge()
     assert ch.charge_response_data['status'] == 'success'
+
+def test_direct_charge_visacard_intl_using_3dsecure(
+    direct_visacard_charge_with_3dsecure, visacard):
+    ch = direct_visacard_charge_with_3dsecure
+    ch.charge()
+
+    assert ch.charge_response_data['data']['authurl'].startswith('http')

@@ -3,7 +3,7 @@ import os
 import pytest
 
 import ravepy
-from ravepy.constants import VBVSECURECODE, CARD
+from ravepy.constants import VBVSECURECODE, CARD, GHANA, USD
 from ravepy.resources.auth import AuthDetails
 
 @pytest.fixture()
@@ -20,7 +20,7 @@ def mastercard():
 @pytest.fixture()
 def visacard():
     return {
-        'cardno': '4242 4242 4242 4242',
+        'cardno': '4242424242424242',
         'cvv': '812',
         'expiry_month': '01',
         'expiry_year': '19',
@@ -170,4 +170,18 @@ def direct_mastercard_charge_without_pin(btn1_auth_details,
     req_kwargs.update(mastercard)
     otp = req_kwargs.pop('otp')
     pin = req_kwargs.pop('pin')
+    return ravepy.Charge.create(source_type=CARD, **req_kwargs)
+
+@pytest.fixture()
+def direct_visacard_charge_with_3dsecure(btn1_auth_details,
+    partial_charge_request1, visacard):
+    ravepy.set_auth(btn1_auth_details)
+    req_kwargs = {}
+    req_kwargs.update(partial_charge_request1)
+    req_kwargs.update(visacard)
+    otp = req_kwargs.pop('otp')
+    pin = req_kwargs.pop('pin')
+    req_kwargs['redirect_url'] = 'https://redirect.com/webhook'
+    req_kwargs['country'] = GHANA
+    req_kwargs['currency'] = USD
     return ravepy.Charge.create(source_type=CARD, **req_kwargs)
