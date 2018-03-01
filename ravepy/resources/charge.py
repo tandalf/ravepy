@@ -43,6 +43,19 @@ class BaseCharge:
         #Recurring billing fields include Card fields +
         'recurring_stop': 'recurring_stop',
 
+        #USSD
+        'payment_type': 'payment_type',
+        'order_ref': 'orderRef',
+        'is_ussd': 'is_ussd',
+
+        #Ghana Mobile Money
+        'mobile_payment_type': 'payment-type',
+        'network': 'network',
+        'is_mobile_money_gh': 'is_mobile_money_gh',
+
+        #Mpesa
+        'is_mpesa': 'is_mpesa',
+
         #others
         'redirect_url': 'redirect_url',
     }
@@ -198,7 +211,7 @@ class BaseCharge:
     def _needs_pin_auth(self, response_dict):
         pass
 
-    def charge(self, redirect_url=None, ping_url=None, *args, **kwargs):
+    def charge(self, redirect_url=None, ping_url=None, pin=None, *args, **kwargs):
         """
         Makes an API request to make the charge. This method encrypts the
         request data for you before sending the request to the server.
@@ -219,6 +232,48 @@ class BaseCharge:
         if self.was_retrieved:
             raise RaveChargeError(
                 'Cannot charge a card that was reconstructed. Use create.')
+        req_data = self._get_direct_charge_request_data()
+
+        if not ping_url:
+            try:
+                resp_data = self._send_request_no_poll(
+                    self._auth_details.urls.DIRECT_CHARGE_URL ,req_data)
+                if resp_data['data'].get('suggested_auth') == 'PIN':
+                    pin = pin if pin else req_data.get('pin')
+                    if not pin:
+                        raise RaveChargeError('Pin required for this transaction')
+                    else:
+                        self._original_request_data.update({'suggested_auth': 'PIN',
+                            'pin': pin})
+                        self._build_charge_request_data()
+                        req_data = self._get_direct_charge_request_data()
+                        resp_data = self._send_request_no_poll(
+                            self._auth_details.urls.DIRECT_CHARGE_URL, req_data)
+
+            except RaveGracefullTimeoutError as e:
+                ping_url = e.ping_url if e.ping_url else ping_url
+                if e.start_polling:
+                    resp_data = self._send_request_no_poll(
+                        self._auth_details.urls.DIRECT_CHARGE_URL, req_data,
+                        switcht_to_polling=True)
+                else:
+                    raise e
+
+        else:
+            resp_data = self._send_request_by_polling(ping_url)
+
+        if resp_data['status'] != 'success':
+            e = RaveChargeError('Charge request failed. See e.error_resp')
+            e.error_resp = resp_data
+            raise e
+
+        self._original_request_data = req_data
+        self._charge_res_data_dict = resp_data
+        self._raw_resp_data = resp_data
+        self._gateway_ref = resp_data['data']['flwRef']
+        self._merchant_ref = resp_data['data']['txRef']
+
+        return resp_data
 
     def _get_direct_charge_request_data(self):
         client = self._auth_details.encrypt_data(json.dumps(
@@ -394,55 +449,6 @@ class BaseCharge:
         pass
 
 class CardCharge(BaseCharge):
-    def charge(self, ping_url=None, pin=None, *args, **kwargs):
-        """
-        Makes a charge request with to the api server. If this charge instance
-        was rebuilt by retreiving it from the server, i.e, it was not built
-        from scratch by calling create, a RaveChargeError will be raised.
-        """
-        super(CardCharge, self).charge(*args, **kwargs)
-        req_data = self._get_direct_charge_request_data()
-
-        if not ping_url:
-            try:
-                resp_data = self._send_request_no_poll(
-                    self._auth_details.urls.DIRECT_CHARGE_URL ,req_data)
-                if resp_data['data'].get('suggested_auth') == 'PIN':
-                    pin = pin if pin else req_data.get('pin')
-                    if not pin:
-                        raise RaveChargeError('Pin required for this transaction')
-                    else:
-                        self._original_request_data.update({'suggested_auth': 'PIN',
-                            'pin': pin})
-                        self._build_charge_request_data()
-                        req_data = self._get_direct_charge_request_data()
-                        resp_data = self._send_request_no_poll(
-                            self._auth_details.urls.DIRECT_CHARGE_URL, req_data)
-
-            except RaveGracefullTimeoutError as e:
-                ping_url = e.ping_url if e.ping_url else ping_url
-                if e.start_polling:
-                    resp_data = self._send_request_no_poll(
-                        self._auth_details.urls.DIRECT_CHARGE_URL, req_data,
-                        switcht_to_polling=True)
-                else:
-                    raise e
-
-        else:
-            resp_data = self._send_request_by_polling(ping_url)
-
-        if resp_data['status'] != 'success':
-            e = RaveChargeError('Charge request failed. See e.error_resp')
-            e.error_resp = resp_data
-            raise e
-
-        self._original_request_data = req_data
-        self._charge_res_data_dict = resp_data
-        self._raw_resp_data = resp_data
-        self._gateway_ref = resp_data['data']['flwRef']
-        self._merchant_ref = resp_data['data']['txRef']
-
-        return resp_data
 
     def validate(self, otp, ping_url=None):
         if self._charge_type==PRE_AUTH_CHARGE or self._preauth_resp_data:
@@ -510,7 +516,7 @@ class CardCharge(BaseCharge):
     def retrieve_from_webhook(cls, auth_details, data):
         charge = CardCharge(auth_details, data=data)
         charge._gateway_ref = resp_data['data']['flwRef']
-        charge._merchant_ref = resp_data['data'].get('txRef')
+        charge._merchant_ref = resp_data['data']['txRef']
         charge._raw_resp_data = resp_data
         charge.was_retrieved = True
         return charge
