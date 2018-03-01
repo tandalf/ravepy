@@ -6,3 +6,7 @@ __default_headers = {
 def post(url, data):
     r = requests.post(url, json=data, headers=__default_headers)
     return r.json()
+
+def get(url):
+    r = request.get(url, headers=__default_headers)
+    return r.json()
