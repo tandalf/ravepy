@@ -431,11 +431,17 @@ class CardCharge(BaseCharge):
         else:
             resp_data = self._send_request_by_polling(ping_url)
 
+        if resp_data['status'] != 'success':
+            e = RaveChargeError('Charge request failed. See e.error_resp')
+            e.error_resp = resp_data
+            raise e
+
         self._original_request_data = req_data
         self._charge_res_data_dict = resp_data
         self._raw_resp_data = resp_data
         self._gateway_ref = resp_data['data']['flwRef']
         self._merchant_ref = resp_data['data']['txRef']
+
         return resp_data
 
     def validate(self, otp, ping_url=None):

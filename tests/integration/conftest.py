@@ -185,3 +185,13 @@ def direct_visacard_charge_with_3dsecure(btn1_auth_details,
     req_kwargs['country'] = GHANA
     req_kwargs['currency'] = USD
     return ravepy.Charge.create(source_type=CARD, **req_kwargs)
+
+@pytest.fixture()
+def error_mastercard_charge(btn1_auth_details, partial_charge_request1, mastercard):
+    ravepy.set_auth(btn1_auth_details)
+    req_kwargs = {}
+    req_kwargs.update(partial_charge_request1)
+    req_kwargs.update(mastercard)
+    otp = req_kwargs.pop('otp')
+    req_kwargs.pop('cardno')
+    return ravepy.Charge.create(source_type=CARD, **req_kwargs)

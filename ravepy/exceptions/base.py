@@ -6,7 +6,7 @@ class RaveError(Exception):
     """
     Base exception for all ravepy specific exceptions.
     """
-    pass
+    error_resp = None
 
 class RaveGracefullTimeoutError(RaveError):
     """
