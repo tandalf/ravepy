@@ -341,8 +341,20 @@ class BaseCharge:
                 the server. Read the docs for RaveGracefullTimeoutError for
                 info on how to handle this exception gracefully.
         """
-        raise NotImplemented('Validate not implemented in base class')
+        if self._charge_type==PRE_AUTH_CHARGE or self._preauth_resp_data:
+            raise RaveChargeError('Cannot call the calidate response for '\
+                'a preauth flow. Call capture instead')
 
+        if ping_url:
+            resp_data = self._send_request_by_polling(ping_url)
+        else:
+            req_data = self._get_validate_request_data(otp)
+            resp_data = self._send_request_no_poll(
+                self._auth_details.urls.VALIDATE_CARD_CHARGE_URL, req_data)
+
+        self._original_request_data = req_data
+        self._validation_resp_data_dict = resp_data
+        self._raw_resp_data = resp_data
 
     def _send_validate_request(self, otp):
         validate_request_body = {
@@ -449,26 +461,12 @@ class BaseCharge:
         pass
 
 class CardCharge(BaseCharge):
-
-    def validate(self, otp, ping_url=None):
-        if self._charge_type==PRE_AUTH_CHARGE or self._preauth_resp_data:
-            raise RaveChargeError('Cannot call the calidate response for '\
-                'a preauth flow. Call capture instead')
-
-        if ping_url:
-            resp_data = self._send_request_by_polling(ping_url)
-        else:
-            req_data = {
-                'PBFPubKey': self._auth_details.public_key,
-                'transaction_reference': self._gateway_ref,
-                'otp': otp
-            }
-            resp_data = self._send_request_no_poll(
-                self._auth_details.urls.VALIDATE_CARD_CHARGE_URL, req_data)
-
-        self._original_request_data = req_data
-        self._validation_resp_data_dict = resp_data
-        self._raw_resp_data = resp_data
+    def _get_validate_request_data(self, otp):
+        return {
+            'PBFPubKey': self._auth_details.public_key,
+            'transaction_reference': self._gateway_ref,
+            'otp': otp
+        }
 
     @classmethod
     def retrieve(cls, auth_details, charge_type=None, gateway_ref=None,
@@ -523,9 +521,12 @@ class CardCharge(BaseCharge):
 
 
 class AccountCharge(BaseCharge):
-    def charge(self, ping_url=None, pin=None, *args, **kwargs):
-        super(AccountCharge, self).charge(*args, **kwargs)
-        raise NotImplemented()
+    def _get_validate_request_data(self, otp):
+        return {
+            'PBFPubKey': self._auth_details.public_key,
+            'transactionreference': self._gateway_ref,
+            'otp': otp
+        }
 
 class ChargeFactory:
     def __init__(self, data=None, *args, **kwargs):
