@@ -22,3 +22,6 @@ coverage/
 # Others
 *__pycache__/
 .pytest_cache/
+
+#Distribution
+dist/
