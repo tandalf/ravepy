@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
 name = 'ravepy',
 packages = ['ravepy'],
-version = '0.2.0',
+version = '0.2.1',
 description = 'Rave payment gateway client library for python',
 author = 'Timothy Ebiuwhe',
 author_email = 'timothy_ebiuwhe@live.com',
