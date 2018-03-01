@@ -11,5 +11,5 @@ download_url = 'https://github.com/tandalf/ravepy/archive/0.2.0.zip',
 keywords = ['ravepy', 'Rave', 'Rave Pay', 'Rave Python Client', 'Rave Gateway',
     'Flutterwave Rave', 'python'],
 classifiers = [],
-install_requires=['request', 'pycrypto']
+install_requires=['requests', 'pycrypto']
 )
