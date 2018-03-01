@@ -441,7 +441,7 @@ class BaseCharge:
         """
         pass
 
-    def verify(self, amount, currency, status='success', charge_code=0,
+    def verify(self, amount, currency, status='success', charge_code='00',
         *args, **kwargs):
         """
         Performs basic sanity checks on the charge. The charge should have
