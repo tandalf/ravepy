@@ -19,7 +19,14 @@ dev_urls = URLS(
     PREAUTH_CHARGE_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
         '/flwv3-pug/getpaidx/api/charge',
     PREAUTH_CAPTURE_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
-        '/flwv3-pug/getpaidx/api/capture')
+        '/flwv3-pug/getpaidx/api/capture',
+    GET_FEES_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
+        '/flwv3-pug/getpaidx/api/fee')
+
+
+
+
+
 
 prod_urls = URLS(
     DIRECT_CHARGE_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
