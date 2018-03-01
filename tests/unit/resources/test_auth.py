@@ -27,6 +27,6 @@ def test_encrypt_data(sample_auth_details):
     cipher = DES3.new(sample_auth_details.encryption_key, DES3.MODE_ECB)
 
     new_plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
-    encrypted = base64.b64encode(cipher.encrypt(new_plain_text))
+    encrypted = base64.b64encode(cipher.encrypt(new_plain_text)).decode('utf-8')
 
     assert sample_auth_details.encrypt_data(plain_text) == encrypted

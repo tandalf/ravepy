@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 """
 Constants used in this library are found here. Majority are currency constants.
 """

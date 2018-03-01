@@ -47,4 +47,4 @@ class AuthDetails:
         cipher = DES3.new(self.encryption_key, DES3.MODE_ECB)
 
         plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
-        return base64.b64encode(cipher.encrypt(plain_text))
+        return base64.b64encode(cipher.encrypt(plain_text)).decode('utf-8')

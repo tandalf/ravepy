@@ -1,3 +1,4 @@
+from __future__ import absolute_import, unicode_literals
 from collections import namedtuple
 
 URLS = namedtuple('URLS', ['DIRECT_CHARGE_URL', 'VALIDATE_CARD_CHARGE_URL',

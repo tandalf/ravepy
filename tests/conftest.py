@@ -42,7 +42,7 @@ def sample_integrity_checksum(sample_auth_details, sample_request_data):
     cipher = DES3.new(sample_auth_details.encryption_key, DES3.MODE_ECB)
 
     new_plain_text = "{}{}".format(plain_text, "".join(chr(padDiff) * padDiff))
-    return base64.b64encode(cipher.encrypt(new_plain_text))
+    return base64.b64encode(cipher.encrypt(new_plain_text)).decode('utf-8')
 
 
 #Integration tests
