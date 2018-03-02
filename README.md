@@ -144,9 +144,9 @@ except RaveChargeError as e:
     print("Could not not place charge. e.error_resp is a response dict that the server returned")
     print(e.error_resp)
 except RaveGracefullTimeoutError as timeout_error:
-  print('Transaction timed-out gracefully, timeout_error.ping_url is set,'\
-    'we need to reschedule a call to ch.charge later and pass the ping_url '\
-    'that is provided. E.g later we will call ch.charge(ping_url=ping_url)')
+    print('Transaction timed-out gracefully, timeout_error.ping_url is set,'\
+      'we need to reschedule a call to ch.charge later and pass the ping_url '\
+      'that is provided. E.g later we will call ch.charge(ping_url=ping_url)')
 ```
 
 The response that cause the error to be raise would usually be available in the
