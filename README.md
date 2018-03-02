@@ -60,6 +60,27 @@ ch.charge() # calls the direct charge endpoint
 ch.validate() # calls the validation endpoint to place a direct charge
 ```
 
+Authentication Details
+----------------------
+Auth details are abstracted away into the AuthDetails class. This class usually holds the values that were provided on your dashboard when you created a charge button. It is advised to store your secret keys and other auth details in env variables. You can also specify if you want to work with the staging or live endpoints. Instantiate like this:
+
+```python
+import ravepy
+from ravepy import constants
+from ravepy.resources.auth import AuthDetails
+
+# preferably get auth data from environment variables
+secret_key = os.environ.get('BTN1_SECRET_KEY')
+public_key = os.environ.get('BTN1_PUBLIC_KEY')
+
+#create a staging auth instance
+auth_detaills = AuthDetails(secret_key, public_key=public_key,
+                  env=constants.DEV)  #this auth instance will be used for testing purposes
+
+ravepy.set_auth(auth_detaills)
+ch = ravepy.Charge.create(...)
+```
+
 Placing a Direct Charge
 -----------------------
 After initiating a charge by calling the ``.charge`` method, your charge is put in
