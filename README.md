@@ -117,17 +117,20 @@ ch.validate(otp) #finalize the charge
 Verifying a Transaction
 -----------------------
 When a charge has been made, it is advised that you verify the transaction before
-giving value to your customer. Call the charge's ``.validate`` method to perform
-sanity checks on your charge. This method calls rave's verification endpoints
-to get the current transaction status, and then helps perform some sanity checks
-on the returned response. Required arguments are the ``amount`` and ``currency``.
+giving value to your customer. Call the charge's `.verify` method to perform
+sanity checks on your charge. This method calls the `.validate` method of the charge instance which in turn makes a request to rave's validation endpoints
+to get the current transaction status if the user has not manually called `.validate` already. It then helps perform some sanity checks
+on the returned response. Required arguments are the `amount` and `currency`.
 E.g,
 
 ```python
-ch.verify(450, constants.NGN)
-ch.verify(450, constants.NGN, status='success')
+# these invocations call .validate if it has not already been called on the instance
+ch.verify(450, constants.NGN) # calls self.validate if it has not already been called
+ch.verify(450, constants.NGN, status='success') # does not bother calling self.validate again
 ch.verify(450, constants.NGN, status='success', charge_code='00')
 ```
+
+Note that if you instantiated the charge instance by calling `ravepy.Charge.retrieve()`, you dont need to call `.validate` manually again.
 
 Inspecting Errors
 -----------------
@@ -138,8 +141,12 @@ an exception if one was raise, and the cause of the error was from the server. E
 try:
     ch.charge()
 except RaveChargeError as e:
-    print("Could not not place charge")
+    print("Could not not place charge. e.error_resp is a response dict that the server returned")
     print(e.error_resp)
+except RaveGracefullTimeoutError as timeout_error:
+  print('Transaction timed-out gracefully, timeout_error.ping_url is set,'\
+    'we need to reschedule a call to ch.charge later and pass the ping_url '\
+    'that is provided. E.g later we will call ch.charge(ping_url=ping_url)')
 ```
 
 The response that cause the error to be raise would usually be available in the
