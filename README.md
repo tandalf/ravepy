@@ -66,6 +66,33 @@ After initiating a charge by calling the ``.charge`` method, your charge is put 
 a pending state. You need to call ``.validate`` to commit the transaction like
 it was done above.
 
+Local MasterCard, VerveCard, or Local VisaCard
+----------------------------------------------
+When charging with our local cards, a pin is usually required and an OTP is usually sent to the customer. You would need to provide the customer's pin when creating the charge, and then provide the otp that was send to the user when the card was initiated. E.g,
+
+```python
+ch = ravepy.Charge.create(source_type=constants.CARD,
+      pin='3310'
+      cardno='5438898014560229',
+      cvv='789',
+      expiry_month='09',
+      expiry_year='19',
+      currency=constants.NGN,
+      country=constants.NIGERIA,
+      amount='450',
+      ...)
+flwRef = ch.charge_response_data['data']['fltRef']
+save(flwRef) #store the ref in durable storage
+
+# Return to customer and Tell the customer to provide the OTP that was sent to him,
+# User provides otp in the user facing UI,
+
+# Back to the backend code
+flwRef = get_ref_from_db()  #Your function to get the transaction from storage
+ch = ravepy.Charge.retrieve(gateway_ref=flwRef)
+ch.validate(otp) #finalize the charge
+```
+
 Verifying a Transaction
 -----------------------
 When a charge has been made, it is advised that you verify the transaction before
