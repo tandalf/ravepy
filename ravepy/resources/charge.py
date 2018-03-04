@@ -6,7 +6,7 @@ from ravepy.exceptions.base import RaveError, RaveGracefullTimeoutError
 from ravepy.exceptions.charge import (
     RavePinRequiredError, RaveChargeError
 )
-from ravepy.constants import NORMAL_CHARGE, PRE_AUTH_CHARGE, CARD, ACCOUNT
+from ravepy.constants import DIRECT_CHARGE, PREAUTH_CHARGE, CARD, ACCOUNT
 
 __metaclass__ = type
 
@@ -174,7 +174,7 @@ class BaseCharge:
         """
         pass
 
-    def create(self, charge_type=NORMAL_CHARGE, *args, **kwargs):
+    def create(self, charge_type=DIRECT_CHARGE, *args, **kwargs):
         """
         Create a new charge. On concrete subclasses, this might be a Card or
         an Account charge. When a charge is created like this, you can then
@@ -202,16 +202,40 @@ class BaseCharge:
 
         return self._charge_req_data_dict
 
-    def _can_use_pin_auth_model(self):
-        pass
+    def _direct_charge(self, req_data, pin):
+        resp_data = self._send_request_no_poll(
+            self._auth_details.urls.DIRECT_CHARGE_URL ,req_data)
+        if resp_data['data'].get('suggested_auth') == 'PIN':
+            pin = pin if pin else req_data.get('pin')
+            if not pin:
+                raise RaveChargeError('Pin required for this transaction')
+            else:
+                self._original_request_data.update({'suggested_auth': 'PIN',
+                    'pin': pin})
+                self._build_charge_request_data()
+                req_data = self._get_direct_charge_request_data()
+                resp_data = self._send_request_no_poll(
+                    self._auth_details.urls.DIRECT_CHARGE_URL, req_data)
 
-    def _can_use_3dsecure_auth_model(self):
-        pass
+        return req_data, resp_data
 
-    def _needs_pin_auth(self, response_dict):
-        pass
+    def _preauth_charge(self, req_data):
+        resp_data = self._send_request_no_poll(
+            self._auth_details.urls.PREAUTH_CHARGE_URL, req_data)
 
-    def charge(self, redirect_url=None, ping_url=None, pin=None, *args, **kwargs):
+        return req_data, resp_data
+
+    def _handle_gratefull_timeout(self, e, req_data, url):
+        if e.start_polling:
+            resp_data = self._send_request_no_poll(url, req_data,
+                start_polling=True)
+        else:
+            raise e
+
+        return resp_data
+
+    def charge(self, redirect_url=None, ping_url=None, pin=None,
+        charge_type=DIRECT_CHARGE, *args, **kwargs):
         """
         Makes an API request to make the charge. This method encrypts the
         request data for you before sending the request to the server.
@@ -219,16 +243,6 @@ class BaseCharge:
         cannot be charged a second time. More concretely, if was_retrieved
         is set to True, this method will raise a RaveChargeError.
         """
-        #Encrypt card details see
-        #https://flutterwavedevelopers.readme.io/v1.0/reference#rave-encryption
-        #-2
-
-        #build and send request
-
-        #Check for case where card is local mastercard or verve and resend
-
-        #Remember to set auth_url in case you need to
-
         if self.was_retrieved:
             raise RaveChargeError(
                 'Cannot charge a card that was reconstructed. Use create.')
@@ -236,29 +250,17 @@ class BaseCharge:
 
         if not ping_url:
             try:
-                resp_data = self._send_request_no_poll(
-                    self._auth_details.urls.DIRECT_CHARGE_URL ,req_data)
-                if resp_data['data'].get('suggested_auth') == 'PIN':
-                    pin = pin if pin else req_data.get('pin')
-                    if not pin:
-                        raise RaveChargeError('Pin required for this transaction')
-                    else:
-                        self._original_request_data.update({'suggested_auth': 'PIN',
-                            'pin': pin})
-                        self._build_charge_request_data()
-                        req_data = self._get_direct_charge_request_data()
-                        resp_data = self._send_request_no_poll(
-                            self._auth_details.urls.DIRECT_CHARGE_URL, req_data)
-
-            except RaveGracefullTimeoutError as e:
-                ping_url = e.ping_url if e.ping_url else ping_url
-                if e.start_polling:
-                    resp_data = self._send_request_no_poll(
-                        self._auth_details.urls.DIRECT_CHARGE_URL, req_data,
-                        switcht_to_polling=True)
+                if charge_type == DIRECT_CHARGE:
+                    req_data, resp_data = self._direct_charge(req_data, pin)
+                elif charge_type == PREAUTH_CHARGE:
+                    req_data, resp_data = self._preauth_charge(req_data)
                 else:
-                    raise e
-
+                    raise RaveChargeError("Invalid charge_type '{}'. Please "\
+                        "provide keyword arg charge_type to be {} or {}".\
+                        format(charge_type, 'constants.DIRECT_CHARGE',
+                            'constants.PREAUTH_CHARGE.'))
+            except RaveGracefullTimeoutError as e:
+                resp_data = self._handle_gratefull_timeout(e, req_data)
         else:
             resp_data = self._send_request_by_polling(ping_url)
 
@@ -341,7 +343,7 @@ class BaseCharge:
                 the server. Read the docs for RaveGracefullTimeoutError for
                 info on how to handle this exception gracefully.
         """
-        if self._charge_type==PRE_AUTH_CHARGE or self._preauth_resp_data:
+        if self._charge_type==PREAUTH_CHARGE or self._preauth_resp_data:
             raise RaveChargeError('Cannot call the calidate response for '\
                 'a preauth flow. Call capture instead')
 
@@ -407,8 +409,8 @@ class BaseCharge:
                 used to instantiate the new Charge.
         Kwargs:
             charge_type: The charge_type that was used to initialize the
-                charge the first time, can be either PRE_AUTH_CHARGE or
-                NORMAL_CHARGE.
+                charge the first time, can be either PREAUTH_CHARGE or
+                DIRECT_CHARGE.
             gateway_ref: (optional) The transaction reference the gateway
                 returned when the charge was initiated. If this is provided the
                 normal requery transaction verification flow is used to
@@ -485,8 +487,8 @@ class CardCharge(BaseCharge):
         merchant_ref=None, use_merchant_ref=False, ping_url=None):
         if not charge_type:
             raise RaveChargeError('Charge type should be specified. Options '\
-                'are {} or {}.'.format(NORMAL_CHARGE, PRE_AUTH_CHARGE))
-        if charge_type != PRE_AUTH_CHARGE and\
+                'are {} or {}.'.format(DIRECT_CHARGE, PREAUTH_CHARGE))
+        if charge_type != PREAUTH_CHARGE and\
             ((gateway_ref or merchant_ref) == False):
             raise RaveChargeError('The gateway_ref (flwRef), or the '\
                 'merchant_ref you used must be provided except when using '\

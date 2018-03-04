@@ -32,8 +32,8 @@ VBVSECURECODE = 'VBVSECURECODE'
 AVS_VBVSECURECODE = 'AVS_VBVSECURECODE'
 
 #Charge types
-PRE_AUTH_CHARGE = 'preauth'
-NORMAL_CHARGE = 'normal'
+PREAUTH_CHARGE = 'preauth'
+DIRECT_CHARGE = 'normal'
 
 #source_type
 CARD='CARD'
