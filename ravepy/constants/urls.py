@@ -4,7 +4,7 @@ from collections import namedtuple
 URLS = namedtuple('URLS', ['DIRECT_CHARGE_URL', 'VALIDATE_CARD_CHARGE_URL',
     'VALIDATE_ACCOUNT_CHARGE_URL', 'TRANSACTION_VERIFICATION_URL',
     'TRANSACTION_VERIFICATION_XREQUERY_URL', 'PREAUTH_CHARGE_URL',
-    'PREAUTH_CAPTURE_URL', 'GET_FEES_URL', 'BANKS_URL'])
+    'PREAUTH_CAPTURE_URL', 'PREAUTH_VOID_URL', 'GET_FEES_URL', 'BANKS_URL'])
 
 dev_urls = URLS(
     DIRECT_CHARGE_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
@@ -21,6 +21,8 @@ dev_urls = URLS(
         '/flwv3-pug/getpaidx/api/charge',
     PREAUTH_CAPTURE_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
         '/flwv3-pug/getpaidx/api/capture',
+    PREAUTH_VOID_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
+        '/flwv3-pug/getpaidx/api/refundorvoid',
     GET_FEES_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
         '/flwv3-pug/getpaidx/api/fee',
     BANKS_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
@@ -46,6 +48,8 @@ prod_urls = URLS(
         '/flwv3-pug/getpaidx/api/charge',
     PREAUTH_CAPTURE_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
         '/flwv3-pug/getpaidx/api/capture',
+    PREAUTH_VOID_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
+        '/flwv3-pug/getpaidx/api/refundorvoid',
     GET_FEES_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\
         '/flwv3-pug/getpaidx/api/fee',
     BANKS_URL='http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'\

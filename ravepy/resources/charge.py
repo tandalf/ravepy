@@ -376,7 +376,19 @@ class BaseCharge:
         flow. Calling this method for the normal(non preauth) raises a
         RaveChargeError
         """
-        raise NotImplemented("Capture is not implemented in base class")
+        raise NotImplemented("Capture is not implemented on this charge type")
+
+    def void(self):
+        """
+        Voids a preauth transaction .
+        """
+        raise NotImplemented("Void is not implemented on this charge type")
+
+    def refund(self):
+        """
+        Refunds a transaction.
+        """
+        raise NotImplemented("refund is not implemented on the charge type")
 
     @classmethod
     def retrieve(cls, auth_details, charge_type=None, gateway_ref=None,
