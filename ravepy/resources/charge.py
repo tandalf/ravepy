@@ -84,6 +84,8 @@ class BaseCharge:
 
         self._is_preauth = False
 
+        self._headers = None
+
     @property
     def charge_request_data(self):
         """
@@ -213,7 +215,7 @@ class BaseCharge:
                 self._original_request_data.update({'suggested_auth': 'PIN',
                     'pin': pin})
                 self._build_charge_request_data()
-                req_data = self._get_direct_charge_request_data()
+                req_data = self._get_charge_request_data()
                 resp_data = self._send_request_no_poll(
                     self._auth_details.urls.DIRECT_CHARGE_URL, req_data)
 
@@ -225,7 +227,7 @@ class BaseCharge:
 
         return req_data, resp_data
 
-    def _handle_gratefull_timeout(self, e, req_data, url):
+    def _handle_gracefull_timeout(self, e, req_data, url):
         if e.start_polling:
             resp_data = self._send_request_no_poll(url, req_data,
                 start_polling=True)
@@ -246,13 +248,15 @@ class BaseCharge:
         if self.was_retrieved:
             raise RaveChargeError(
                 'Cannot charge a card that was reconstructed. Use create.')
-        req_data = self._get_direct_charge_request_data()
+        req_data = self._get_charge_request_data()
 
         if not ping_url:
             try:
                 if charge_type == DIRECT_CHARGE:
+                    charge_url = self._auth_details.urls.DIRECT_CHARGE_URL
                     req_data, resp_data = self._direct_charge(req_data, pin)
                 elif charge_type == PREAUTH_CHARGE:
+                    charge_url = self._auth_details.urls.PREAUTH_CHARGE_URL
                     req_data, resp_data = self._preauth_charge(req_data)
                 else:
                     raise RaveChargeError("Invalid charge_type '{}'. Please "\
@@ -260,7 +264,8 @@ class BaseCharge:
                         format(charge_type, 'constants.DIRECT_CHARGE',
                             'constants.PREAUTH_CHARGE.'))
             except RaveGracefullTimeoutError as e:
-                resp_data = self._handle_gratefull_timeout(e, req_data)
+                resp_data = self._handle_gracefull_timeout(e, req_data,
+                    charge_url)
         else:
             resp_data = self._send_request_by_polling(ping_url)
 
@@ -277,7 +282,7 @@ class BaseCharge:
 
         return resp_data
 
-    def _get_direct_charge_request_data(self):
+    def _get_charge_request_data(self):
         client = self._auth_details.encrypt_data(json.dumps(
             self._charge_req_data_dict))
         return {
@@ -288,7 +293,8 @@ class BaseCharge:
 
     def _send_request_no_poll(self, url, req_data, switch_to_polling=False):
         if switch_to_polling:
-            resp_data = post(url + '?use_polling=1', req_data)
+            resp_data = post(url + '?use_polling=1', req_data,
+                headers=self._headers)
             if resp_data['status'] == 'success':
                 ping_url = resp_data['data']['ping_url']
                 e = RaveGracefullTimeoutError("Poll for response on url {}"\
@@ -297,7 +303,7 @@ class BaseCharge:
             else:
                 raise RaveChargeError('Could not switch to polling')
         else:
-            resp_data = post(url, req_data)
+            resp_data = post(url, req_data, headers=self._headers)
             if resp_data['status'] == 'error' and\
                 resp_data['data'].get('status') == 'failed':
                 e = RaveGracefullTimeoutError(
@@ -364,7 +370,7 @@ class BaseCharge:
             'transaction_reference': self._gateway_ref,
             'otp': otp,
         }
-        resp = self._send_post(validate_request_body)
+        resp = post(validate_request_body, headers=self._headers)
 
         # Check if a polling is required and raise a valid exception
 
@@ -563,6 +569,10 @@ class ChargeFactory:
                 .format(CARD, ACCOUNT, source_type))
 
         charge.create(*args, **kwargs)
+        charge._headers = {
+            'content-type': 'application/json',
+            'Authorization': 'Bearer ' + self._auth_details.secret_key
+        }
         return charge
 
     def retrieve(self, auth_details, charge_type=None, gateway_ref=None,
@@ -586,6 +596,10 @@ class ChargeFactory:
             raise RaveChargeError('Invalid source type. Must be {} or {} not {}'\
                 .format(CARD, ACCOUNT, source_type))
 
+        charge._headers = {
+            'content-type': 'application/json',
+            'Authorization': 'Bearer ' + auth_details.secret_key
+        }
         return charge
 
         def retrieve_from_webhook(self, source_type=CARD, *args, **kwargs):
@@ -605,4 +619,8 @@ class ChargeFactory:
                 raise RaveChargeError('Invalid source type. Must be {} or {}'\
                     .format(CARD, ACCOUNT))
 
+            charge._headers = {
+                'content-type': 'application/json',
+                'Authorization': 'Bearer ' + self._auth_details.secret_key
+            }
             return charge

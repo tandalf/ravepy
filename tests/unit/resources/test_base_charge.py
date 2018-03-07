@@ -55,6 +55,7 @@ def test__send_request_no_poll(sample_auth_details):
             }
             charge._send_request_no_poll(
                 sample_auth_details.urls.DIRECT_CHARGE_URL, data)
-                
-            post_call = call(sample_auth_details.urls.DIRECT_CHARGE_URL, data)
+
+            post_call = call(sample_auth_details.urls.DIRECT_CHARGE_URL, data,
+                headers=None)
             assert post.call_args == post_call
