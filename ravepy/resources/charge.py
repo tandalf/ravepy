@@ -471,7 +471,7 @@ class BaseCharge:
         self.validate_response_data or self.preauth_response_data should be
         available by the time this method is called.
         """
-        pass
+        raise NotImplementedError()
 
     @classmethod
     def banks(cls, country):
