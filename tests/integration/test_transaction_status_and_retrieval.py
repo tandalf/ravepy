@@ -72,5 +72,5 @@ def test_verification_fails_when_amount_is_different(
 
     # transaction amount should be AT LEAST the original amount
     with pytest.raises(RaveChargeError):
-        ch.verify(amount-1.0, currency)
-    ch.verify(amount+1.0, currency)
+        ch.verify(amount+1.0, currency)
+    ch.verify(amount-1.0, currency)
