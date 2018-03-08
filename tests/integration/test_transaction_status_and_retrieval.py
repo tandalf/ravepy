@@ -49,6 +49,8 @@ def test_verify_mastercard_after_retrieve(direct_mastercard_charge_with_pin,
     otp = mastercard['otp']
     ch = direct_mastercard_charge_with_pin
     ch.charge()
+    ch.validate(otp)
+    
     auth_details = ch._auth_details
     gateway_ref = ch.charge_response_data['data']['flwRef']
     amount = float(ch.charge_request_data['amount'])
