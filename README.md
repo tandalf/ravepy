@@ -54,7 +54,7 @@ ch = ravepy.Charge.create(source_type=constants.CARD,
       first_name='Timothy',
       last_name='Ebiuwhe',
       ip_address='103.238.105.185',
-      merchant_transaction_ref='MXX-ASC-4578')
+      merchant_ref='MXX-ASC-4578')
 
 ch.charge() # calls the direct charge endpoint
 ch.validate() # calls the validation endpoint to place a direct charge
@@ -193,7 +193,7 @@ Also, you might need to perform the polling at a later time when the charge obje
 
 Retrieving a Charge Instance (Requery and XRequery transaction status flow)
 ---------------------------------------------------------------------------
-Lets say you need to know the status of a transaction later in the future after the charge has been initiated. Maybe to confirm the status of a charge at a later time. Ravepy provides a way for you to rebuild a charge instance if you have the gateway_ref (flwRef), or the merchant_transaction_ref (txRef). Example.
+Lets say you need to know the status of a transaction later in the future after the charge has been initiated. Maybe to confirm the status of a charge at a later time. Ravepy provides a way for you to rebuild a charge instance if you have the gateway_ref (flwRef), or the merchant_ref (txRef). Example.
 
 ```python
     ch = ravepy.Charge.retrieve(gateway_ref='flwRef-fake', charge_type=constants.DIRECT_CHARGE)
@@ -203,10 +203,10 @@ Lets say you need to know the status of a transaction later in the future after 
 The the charge_type keyword argument is either DIRECT_CHARGE or PREAUTH_CHARGE
 to retrieve a card that was initiated using the normal auth model or the preauth model.
 
-If instead for some reason, you wanted to used your own generated transaction ref that you used during initialization of the charge, you can pass in merchant_transaction_ref and set use_merchant_ref=True like so.
+If instead for some reason, you wanted to used your own generated transaction ref that you used during initialization of the charge, you can pass in merchant_ref and set use_merchant_ref=True like so.
 
 ```python
-    ch = ravepy.Charge.retrieve(use_merchant_ref=True, merchant_transaction_ref='my-fake-ref',
+    ch = ravepy.Charge.retrieve(use_merchant_ref=True, merchant_ref='my-fake-ref',
         charge_type=constants.DIRECT_CHARGE)
     ch.verify(amount, currency)
 ```

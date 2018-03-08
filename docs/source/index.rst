@@ -65,7 +65,7 @@ use one of the test cards provided on rave's website.
           first_name='Timothy',
           last_name='Ebiuwhe',
           ip_address='103.238.105.185',
-          merchant_transaction_ref='MXX-ASC-4578')
+          merchant_ref='MXX-ASC-4578')
 
     ch.charge() # calls the direct charge endpoint
     ch.validate() # calls the validation endpoint to place a direct charge

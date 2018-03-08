@@ -12,7 +12,7 @@ __metaclass__ = type
 
 class BaseCharge:
     required_fields = ['pub_key', 'first_name', 'last_name', 'ip_address',
-        'merchant_transaction_ref']
+        'merchant_ref']
     internal_to_external_field_map = {
         'pub_key': 'PBFPubKey',
         'currency': 'currency',
@@ -23,7 +23,7 @@ class BaseCharge:
         'first_name': 'firstname',
         'last_name': 'lastname',
         'ip_address': 'IP',
-        'merchant_transaction_ref': 'txRef',
+        'merchant_ref': 'txRef',
         'device_fingerprint': 'device_fingerprint',
 
         #Card fields

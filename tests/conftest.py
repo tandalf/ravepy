@@ -61,6 +61,6 @@ def partial_charge_request1():
         'first_name': 'Timothy',
         'last_name': 'Ebiuwhe',
         'ip_address': '103.238.105.185',
-        'merchant_transaction_ref': 'MXX-ASC-4578',
+        'merchant_ref': 'MXX-ASC-4578',
         'device_fingerprint': '69e6b7f0sb72037aa8428b70fbe03986c'
     }
