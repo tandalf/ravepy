@@ -461,17 +461,77 @@ class BaseCharge:
         """
         pass
 
-    def verify(self, amount, currency, status='success', charge_code='00',
+    @classmethod
+    def _call_verification_endpoint(cls, auth_details, gateway_ref=None,
+        merchant_ref=None, use_merchant_ref=False, ping_url=None):
+        if ping_url:
+            # TODO: work on polling case
+            pass
+        else:
+            charge = CardCharge(auth_details)
+            req_data = {
+                'SECKEY': auth_details.secret_key
+            }
+            if use_merchant_ref:
+                req_data.update({
+                    'txref': merchant_ref,
+                    'last_attempt': 1,
+                    'only_successful': 1})
+                resp_data = charge._send_request_no_poll(
+                    auth_details.urls.TRANSACTION_VERIFICATION_XREQUERY_URL,
+                    req_data)
+            else:
+                resp_data = req_data.update({
+                    'flw_ref': gateway_ref,
+                    'normalize': 1
+                })
+                resp_data = charge._send_request_no_poll(
+                    auth_details.urls.TRANSACTION_VERIFICATION_URL, req_data)
+
+            charge._gateway_ref = gateway_ref
+            charge._merchant_ref = merchant_ref
+            charge._raw_resp_data = resp_data
+            charge._verification_resp_data_dict = resp_data
+            charge.was_retrieved = True
+
+            return charge
+
+    def verify(self, amount, currency, status='successful', charge_code='00',
         *args, **kwargs):
         """
         Performs basic sanity checks on the charge. The charge should have
         been initiated on the payment gateway before calling this method. More
         concretely, it should have a transaction reference assigned to it at
         the point where this method will be called. Either the
-        self.validate_response_data or self.preauth_response_data should be
+        self.verification_response_data or self.capture_response_data should be
         available by the time this method is called.
         """
-        raise NotImplementedError()
+        if not self.verification_response_data:
+            ch = self.__class__._call_verification_endpoint(
+            auth_details=self._auth_details, gateway_ref=self._gateway_ref,
+            use_merchant_ref=False)
+
+            self._verification_resp_data_dict = ch._verification_resp_data_dict
+            self._raw_resp_data = ch._raw_resp_data
+
+        resp_data = self.verification_response_data
+
+        if resp_data['data']['amount'] < amount:
+            raise RaveChargeError("Transaction amount '{}' is less than "\
+                "requested amount '{}'".format(resp_data['data']['amount'],
+                amount))
+        if resp_data['data']['transaction_currency'] != currency:
+            raise RaveChargeError("Invalid currenty. {} was desired, but the "\
+                "transaction was made with {}".format(
+                    currency, resp_data['data']["currency"]))
+        if resp_data['data']['flwMeta']['chargeResponse'] != charge_code:
+            raise RaveChargeError('Undesired charge response code. {} '\
+                'returned but {} was expected'.\
+                    format(resp_data['data']['flwMeta']['chargeResponse'],
+                    charge_code))
+        if resp_data['data']['status'] != status:
+            raise RaveChargeError('Undesired status. {} returned but {} was expected'\
+                .format(resp_data['data']['status'], status))
 
     @classmethod
     def banks(cls, country):
@@ -500,35 +560,10 @@ class CardCharge(BaseCharge):
                 'merchant_ref you used must be provided except when using '\
                 'preauth flow')
 
-        if ping_url:
-            # TODO: work on polling case
-            pass
-        else:
-            charge = CardCharge(auth_details)
-            req_data = {
-                'SECKEY': auth_details.secret_key
-            }
-            if use_merchant_ref:
-                req_data.update({
-                    'txref': merchant_ref,
-                    'last_attempt': 1,
-                    'only_successful': 1})
-                resp_data = charge._send_request_no_poll(
-                    auth_details.urls.TRANSACTION_VERIFICATION_XREQUERY_URL,
-                    req_data)
-            else:
-                resp_data = req_data.update({
-                    'flw_ref': gateway_ref,
-                    'normalize': 1
-                })
-                resp_data = charge._send_request_no_poll(
-                    auth_details.urls.TRANSACTION_VERIFICATION_URL, req_data)
+        charge = CardCharge._call_verification_endpoint(
+            auth_details, gateway_ref=gateway_ref, merchant_ref=merchant_ref,
+            use_merchant_ref=use_merchant_ref, ping_url=ping_url)
 
-        charge._gateway_ref = gateway_ref
-        charge._merchant_ref = merchant_ref
-        charge._raw_resp_data = resp_data
-        charge._verification_resp_data_dict = resp_data
-        charge.was_retrieved = True
         return charge
 
     def retrieve_from_webhook(cls, auth_details, data):

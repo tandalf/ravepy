@@ -33,20 +33,25 @@ def test_retrieve_mastercard_xrequery(direct_mastercard_charge_with_pin,
     assert ch.was_retrieved == True
     assert ch.verification_response_data['message'] == 'Tx Fetched'
 
-def test_verify_mastercard(direct_mastercard_charge_with_pin):
+def test_verify_mastercard_after_validating_charge(
+    direct_mastercard_charge_with_pin, mastercard):
+    otp = mastercard['otp']
     ch = direct_mastercard_charge_with_pin
     ch.charge()
-    amount = ch.charge_request_data['amount']
+    amount = float(ch.charge_request_data['amount'])
     currency = ch.charge_request_data['currency']
 
+    ch.validate(otp)
     ch.verify(amount, currency)
 
-def test_verify_mastercard_after_retrieve(direct_mastercard_charge_with_pin):
+def test_verify_mastercard_after_retrieve(direct_mastercard_charge_with_pin,
+    mastercard):
+    otp = mastercard['otp']
     ch = direct_mastercard_charge_with_pin
     ch.charge()
     auth_details = ch._auth_details
     gateway_ref = ch.charge_response_data['data']['flwRef']
-    amount = ch.charge_request_data['amount']
+    amount = float(ch.charge_request_data['amount'])
     currency = ch.charge_request_data['currency']
 
     ch = ravepy.Charge.retrieve(auth_details, charge_type=DIRECT_CHARGE,
@@ -54,13 +59,15 @@ def test_verify_mastercard_after_retrieve(direct_mastercard_charge_with_pin):
     ch.verify(amount, currency)
 
 def test_verification_fails_when_amount_is_different(
-    direct_mastercard_charge_with_pin):
+    direct_mastercard_charge_with_pin, mastercard):
+    otp = mastercard['otp']
     ch = direct_mastercard_charge_with_pin
     ch.charge()
+    ch.validate(otp)
 
     auth_details = ch._auth_details
     gateway_ref = ch.charge_response_data['data']['flwRef']
-    amount = ch.charge_request_data['amount']
+    amount = float(ch.charge_request_data['amount'])
     currency = ch.charge_request_data['currency']
 
     # transaction amount should be AT LEAST the original amount
