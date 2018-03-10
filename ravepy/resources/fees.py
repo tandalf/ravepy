@@ -10,7 +10,7 @@ __metaclass__ = type
 class Fee:
     def __init__(self, auth_details, amount, currency, ptype=ACCOUNT, card6=None):
         self._auth_details = auth_details
-        self._data = data
+        self._data = None
 
         self._amount = amount
         self._currency = currency
@@ -21,24 +21,29 @@ class Fee:
         return '<Fee> {}'.format(json.dumps(self._data))
 
     @property
+    def raw_resp(self):
+        """The raw response that was gotten from the server"""
+        return self._data
+
+    @property
     def charge_amount(self):
         """The final charge amount"""
-        return self._data['charge_amount']
+        return self._data['data'].get('charge_amount', None)
 
     @property
     def fee(self):
         """The fee"""
-        return self._data['fee']
+        return self._data['data'].get('fee', None)
 
     @property
     def merchant_fee(self):
         """The merchant fee"""
-        return self._data['merchantfee']
+        return self._data['data'].get('merchantfee', None)
 
     @property
     def rave_fee(self):
         """The final rave's fee"""
-        return self._data['ravefee']
+        return self._data['data'].get('ravefee', None)
 
     def get_fee(self):
         req_data = {
@@ -53,7 +58,7 @@ class Fee:
                 raise RaveError('Invalid value for \'ptype\'. Must be ACCOUNT')
 
         if self._card6:
-            req_data.update({'card6': card6})
+            req_data.update({'card6': self._card6})
 
         self._data = post(self._auth_details.urls.GET_FEES_URL, req_data)
         return self._data
