@@ -1,8 +1,10 @@
 
-Welcome to Ravepy's documentation!
-==================================
-This documentation covers how to use the python client library for the rave payment
-gateway. The library is very easy and straight forward to use.
+Welcome to Ravepy!
+==================
+This introduction covers what the python client library for the rave payment
+gateway looks like. For a comprehensive documentation, please visit [The Docs Page](http://ravepy.readthedocs.io/en/latest/). The library is very easy and straight forward to use.
+
+[See documentation at Read The Docs](http://ravepy.readthedocs.io/en/latest/)
 
 
 Getting Started

@@ -36,7 +36,7 @@ The two special arguments here are the ``source_type`` which determines if the r
 would be a card or account charge. Also the ``charge_type`` which will determine if a charge would
 use the preauth of normal flow see `Rave's API Docs <https://flutterwavedevelopers.readme.io/v2.0/reference>`_.
 
-The other keyword arguments are documented here :ref:`_create_kwargs`.
+The other keyword arguments are documented here :ref:`create_kwargs`.
 
 Creating a Preauth Charge
 -------------------------
@@ -60,8 +60,8 @@ called like this
 
 .. _create_kwargs:
 
-Valid Create Keyword Arguments
--------------------------------
+Valid Charge.create Keyword Arguments
+-------------------------------------
 Here are the keyword arguments that are valid when calling the :py:meth:`ravepy.Charge.create`
 method. The dict below also shows a mapping of arguments to body params that will be encryted
 before the charge is made. See `Rave Encryption Docs <https://flutterwavedevelopers.readme.io/v2.0/reference-edit/rave-encryption>`_
