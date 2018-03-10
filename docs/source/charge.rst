@@ -58,6 +58,12 @@ called like this
 
         )
 
+Charging a Charge
+=================
+When a Charge instance is created, it doesn't hit the API gateway yet: it only prepares the charge.
+To make a charge request, call the ~:py:meth:`ravepy.Charge.charge` method on the charge instance
+after calling ~:py:meth:`ravepy.Charge.create`
+
 .. _create_kwargs:
 
 Valid Charge.create Keyword Arguments

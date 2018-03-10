@@ -59,3 +59,68 @@ def test__send_request_no_poll(sample_auth_details):
             post_call = call(sample_auth_details.urls.DIRECT_CHARGE_URL, data,
                 headers=None)
             assert post.call_args == post_call
+
+def test_sucessful_direct_charge_sets_charge_response_data(sample_auth_details):
+    with patch('ravepy.resources.charge.BaseCharge._direct_charge')\
+        as mocked_direct_charge:
+        req = {'ccv': '342'}
+        resp = {
+            'status': 'success',
+            'data': {
+                'flwRef': 'f34f3',
+                'txRef': 'r343r'
+            }
+        }
+        mocked_direct_charge.return_value = (req, resp)
+        charge = BaseCharge(sample_auth_details)
+        charge.charge()
+        assert charge.charge_response_data == resp
+
+def test_sucessful_direct_charge_sets_original_request_data(sample_auth_details):
+    with patch('ravepy.resources.charge.BaseCharge._direct_charge')\
+        as mocked_direct_charge:
+        req = {'ccv': '342'}
+        resp = {
+            'status': 'success',
+            'data': {
+                'flwRef': 'f34f3',
+                'txRef': 'r343r'
+            }
+        }
+        mocked_direct_charge.return_value = (req, resp)
+        charge = BaseCharge(sample_auth_details)
+        charge.charge()
+        assert charge._original_request_data == req
+
+def test_sucessful_direct_charge_sets_raw_resp_data(sample_auth_details):
+    with patch('ravepy.resources.charge.BaseCharge._direct_charge')\
+        as mocked_direct_charge:
+        req = {'ccv': '342'}
+        resp = {
+            'status': 'success',
+            'data': {
+                'flwRef': 'f34f3',
+                'txRef': 'r343r'
+            }
+        }
+        mocked_direct_charge.return_value = (req, resp)
+        charge = BaseCharge(sample_auth_details)
+        charge.charge()
+        assert charge._raw_resp_data == resp
+
+def test_sucessful_direct_charge_sets_transaction_refs(sample_auth_details):
+    with patch('ravepy.resources.charge.BaseCharge._direct_charge')\
+        as mocked_direct_charge:
+        req = {'ccv': '342'}
+        resp = {
+            'status': 'success',
+            'data': {
+                'flwRef': 'f34f3',
+                'txRef': 'r343r'
+            }
+        }
+        mocked_direct_charge.return_value = (req, resp)
+        charge = BaseCharge(sample_auth_details)
+        charge.charge()
+        assert charge._gateway_ref == resp['data']['flwRef']
+        assert charge._merchant_ref == resp['data']['txRef']
