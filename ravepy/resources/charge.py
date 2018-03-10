@@ -68,7 +68,7 @@ class BaseCharge:
         """
         self._auth_details = auth_details
         self.was_retrieved = False
-        self._original_request_data = None
+        self._original_charge_data = None
         self._charge_req_data_dict = None
         self._charge_res_data_dict = None
         self._validation_resp_data_dict = None
@@ -183,10 +183,10 @@ class BaseCharge:
         call .charge() on it to initiate the charge.
         """
         self._charge_type = charge_type
-        self._original_request_data = kwargs
-        self._original_request_data['pub_key'] = self._auth_details.public_key
+        self._original_charge_data = kwargs
+        self._original_charge_data['pub_key'] = self._auth_details.public_key
         if kwargs.get('pin'):
-            self._original_request_data.update({'suggested_auth': 'PIN'})
+            self._original_charge_data.update({'suggested_auth': 'PIN'})
         self._build_charge_request_data()
 
     def _build_charge_request_data(self):
@@ -194,7 +194,7 @@ class BaseCharge:
         # method, and converts them into a payload that the server expects
         #
         self._charge_req_data_dict = {}
-        for key, value in self._original_request_data.items():
+        for key, value in self._original_charge_data.items():
             if key not in BaseCharge.internal_to_external_field_map.keys():
                 raise RaveError(
                     'Unkown key \'{}\' while trying to build request'.format(
@@ -212,7 +212,7 @@ class BaseCharge:
             if not pin:
                 raise RaveChargeError('Pin required for this transaction')
             else:
-                self._original_request_data.update({'suggested_auth': 'PIN',
+                self._original_charge_data.update({'suggested_auth': 'PIN',
                     'pin': pin})
                 self._build_charge_request_data()
                 req_data = self._get_charge_request_data()
@@ -329,6 +329,9 @@ class BaseCharge:
             e = RaveGracefullTimeoutError('Transaction failed. Status: {}'\
                 .format(data_status))
             e.status = data_status
+
+    def _get_validate_request_data(self, otp):
+        return NotImplemented
 
     def validate(self, otp, ping_url=None):
         """
