@@ -19,6 +19,25 @@ class Bank:
         self._bank_code = bank_code
         self._internet_banking = internet_banking
 
+    def __str__(self):
+        return "<Bank> name: {}, code: {}, internet_banking: {}".format(
+            self._bank_name, self._bank_code, self._internet_banking)
+
+    @property
+    def name(self):
+        """The name of the bank"""
+        return self._bank_name
+
+    @property
+    def code(self):
+        """The code of the bank"""
+        return self._bank_code
+
+    @property
+    def internet_banking(self):
+        """Boolean indicating if the bank supports internet banking"""
+        return self._internet_banking
+
 class BankFactory:
     def __init__(self, auth_details):
         self._auth_details = auth_details
