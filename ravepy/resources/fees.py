@@ -17,6 +17,29 @@ class Fee:
         self._ptype = ptype
         self._card6 = card6
 
+    def __str__(self):
+        return '<Fee> {}'.format(json.dumps(self._data))
+
+    @property
+    def charge_amount(self):
+        """The final charge amount"""
+        return self._data['charge_amount']
+
+    @property
+    def fee(self):
+        """The fee"""
+        return self._data['fee']
+
+    @property
+    def merchant_fee(self):
+        """The merchant fee"""
+        return self._data['merchantfee']
+
+    @property
+    def rave_fee(self):
+        """The final rave's fee"""
+        return self._data['ravefee']
+
     def get_fee(self):
         req_data = {
             'PBFPubKey': self._auth_details.public_key,
@@ -34,3 +57,12 @@ class Fee:
 
         self._data = post(self._auth_details.urls.GET_FEES_URL, req_data)
         return self._data
+
+class FeeFactory:
+    def __init__(self, auth_details):
+        self._auth_details = auth_details
+
+    def get_fee(self, amount, currency, ptype=ACCOUNT, card6=None):
+        fee = Fee(self._auth_details, amount, currency, ptype, card6)
+        fee.get_fee()
+        return fee
