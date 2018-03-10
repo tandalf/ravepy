@@ -113,6 +113,7 @@ exceptions ``.error_resp`` attribute.
    :caption: Contents:
 
    auth
+   charge
 
 
 
