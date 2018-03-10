@@ -10,8 +10,7 @@ gateway. The library is very easy and straight forward to use.
 
 .. warning::
 
-   This library has not gotten to it's first alpha release. Bugs and uncompleted
-   functions should be expects.
+   This library has not gotten to it's first alpha release.
 
 Getting Started
 +++++++++++++++
@@ -49,7 +48,7 @@ use one of the test cards provided on rave's website.
 
    auth_details = AuthDetails('My-secret-key', public_key='My-public-key')
    ravepy.set_auth(auth_details)
-   
+
    ch = ravepy.Charge.create(source_type=constants.CARD,
           cardno='5438898014560229',
           cvv='789',
@@ -112,6 +111,8 @@ exceptions ``.error_resp`` attribute.
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   auth
 
 
 
