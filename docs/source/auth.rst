@@ -11,7 +11,6 @@ authentication details for the requests that would be made to rave. Example usag
    import os
 
    import ravepy
-   from ravepy import constants
    from ravepy.resources.auth import AuthDetails
 
    #Get keys from environment variables of your choice
@@ -37,5 +36,5 @@ should create a staging/dev AuthDetails. By default, a live AuthDetails is creat
   from rave import constants
   from ravepy.resources.auth import AuthDetails
 
-      dev = constants.DEV
-      auth_details = AuthDetails(secret_key, public_key=public_key, env=dev)
+  dev = constants.DEV
+  auth_details = AuthDetails(secret_key, public_key=public_key, env=dev)
