@@ -640,25 +640,25 @@ class ChargeFactory:
         }
         return charge
 
-        def retrieve_from_webhook(self, source_type=CARD, *args, **kwargs):
-            """
-            Performs the same actions as it's base class but automatically creates
-            the right type of charge instance based on the source_type param.
-            Kwargs:
-                source_type: The type of charge to instantiate. Default is CARD.
-            """
-            if source_type == CARD:
-                charge = CardCharge.retrieve_from_webhook(*args,
-                    **kwargs)
-            elif source_type == ACCOUNT:
-                charge = AccountCharge.retrieve_from_webhook(*args,
-                    **kwargs)
-            else:
-                raise RaveChargeError('Invalid source type. Must be {} or {}'\
-                    .format(CARD, ACCOUNT))
+    def retrieve_from_webhook(self, source_type=CARD, *args, **kwargs):
+        """
+        Performs the same actions as it's base class but automatically creates
+        the right type of charge instance based on the source_type param.
+        Kwargs:
+            source_type: The type of charge to instantiate. Default is CARD.
+        """
+        if source_type == CARD:
+            charge = CardCharge.retrieve_from_webhook(*args,
+                **kwargs)
+        elif source_type == ACCOUNT:
+            charge = AccountCharge.retrieve_from_webhook(*args,
+                **kwargs)
+        else:
+            raise RaveChargeError('Invalid source type. Must be {} or {}'\
+                .format(CARD, ACCOUNT))
 
-            charge._headers = {
-                'content-type': 'application/json',
-                'Authorization': 'Bearer ' + self._auth_details.secret_key
-            }
-            return charge
+        charge._headers = {
+            'content-type': 'application/json',
+            'Authorization': 'Bearer ' + self._auth_details.secret_key
+        }
+        return charge
