@@ -32,6 +32,12 @@ a direct (not preauth) card charge, create the charge like this:
 
         )
 
+The two special arguments here are the ``source_type`` which determines if the returned charge
+would be a card or account charge. Also the ``charge_type`` which will determine if a charge would
+use the preauth of normal flow see `Rave's API Docs <https://flutterwavedevelopers.readme.io/v2.0/reference>`_.
+
+The other keyword arguments are documented here :ref:`_create_kwargs`.
+
 Creating a Preauth Charge
 -------------------------
 If you would be using the Preauth flow, then :py:meth:`ravepy.Charge.create` has to be
