@@ -18,3 +18,5 @@ def set_auth(auth_details):
     Charge._auth_details = auth_details
     Bank._auth_details = auth_details
     Fee._auth_details = auth_details
+
+__version__ = '0.2.9'
