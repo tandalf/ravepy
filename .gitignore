@@ -15,12 +15,14 @@
 
 # Coverage
 coverage/
+coverage.*
 .coverage
 .cache
 
 # Others
 *__pycache__/
 .pytest_cache/
+cc-test-reporter
 
 #Distribution
 dist/
