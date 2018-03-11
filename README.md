@@ -3,6 +3,7 @@ Welcome to Ravepy!
 ==================
 [![Build Status](https://travis-ci.org/tandalf/ravepy.svg?branch=master)](https://travis-ci.org/tandalf/ravepy)
 [![PyPI version](https://badge.fury.io/py/ravepy.svg)](https://badge.fury.io/py/ravepy)
+[![Read The Docs](https://img.shields.io/badge/docs-readthedocs-blue.svg)](http://ravepy.readthedocs.io/en/latest/)
 ![Python Versions](https://img.shields.io/badge/python-2.7%2C%203.3%2C%203.4%2C%203.5%2C%203.6-blue.svg)
 
 This introduction covers what the python client library for the rave payment
