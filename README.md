@@ -1,6 +1,10 @@
 
 Welcome to Ravepy!
 ==================
+[![Build Status](https://travis-ci.org/tandalf/ravepy.svg?branch=master)](https://travis-ci.org/tandalf/ravepy)
+[![PyPI version](https://badge.fury.io/py/ravepy.svg)](https://badge.fury.io/py/ravepy)
+![Python Versions](https://img.shields.io/badge/python-2.7%2C%203.3%2C%203.4%2C%203.5%2C%203.6-blue.svg)
+
 This introduction covers what the python client library for the rave payment
 gateway looks like. For a comprehensive documentation, please visit [The Docs Page](http://ravepy.readthedocs.io/en/latest/). The library is very easy and straight forward to use.
 
