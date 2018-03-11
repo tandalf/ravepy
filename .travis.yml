@@ -1,4 +1,7 @@
 language: python
+
+env:
+  - CC_TEST_REPORTER_ID=a612392dc1eca42b4f15a24f5c18504b27c1787ac571d0266f78676811698498
 python:
   - "2.7"
   - "3.3"
@@ -7,6 +10,7 @@ python:
   - "3.5-dev"
   - "3.6"
   - "3.6-dev"
+
 install:
   - pip install -r requirements.txt
   - pip install -r requirements-dev.txt
