@@ -10,4 +10,12 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install -r requirements-dev.txt
-script: py.test --cov=ravepy tests/
+
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
+script: py.test --cov=ravepy tests/unit/
+
+after_script: ./cc-test-reporter after-build --exit-code $EXIT_CODE
