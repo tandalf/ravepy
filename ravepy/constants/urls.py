@@ -25,7 +25,7 @@ url_kwargs = {
 dev_url_kwargs = {}
 prod_url_kwargs = {}
 
-for url_name, url in url_kwargs:
+for url_name, url in url_kwargs.items():
     dev_url_kwargs[url_name] = DEV_URL + url
     prod_url_kwargs[url_name] = PROD_URL + url
 
