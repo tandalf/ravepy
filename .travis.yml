@@ -11,4 +11,4 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install -r requirements-dev.txt
-scripts: py.test --cov=ravepy tests/
+script: py.test --cov=ravepy tests/
