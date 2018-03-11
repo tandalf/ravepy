@@ -20,6 +20,6 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
 
-script: py.test --cov=ravepy tests/unit/
+script: py.test --cov-report term --cov=ravepy tests/unit/
 
 after_script: ./cc-test-reporter after-build --exit-code $EXIT_CODE
