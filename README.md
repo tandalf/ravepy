@@ -2,8 +2,10 @@
 Welcome to Ravepy!
 ==================
 [![Build Status](https://travis-ci.org/tandalf/ravepy.svg?branch=master)](https://travis-ci.org/tandalf/ravepy)
-[![PyPI version](https://badge.fury.io/py/ravepy.svg)](https://badge.fury.io/py/ravepy)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/3242b58a60274c2286a78f6fdd24d5ff)](https://www.codacy.com/app/tandalf/ravepy?utm_source=github.com&utm_medium=referral&utm_content=tandalf/ravepy&utm_campaign=Badge_Coverage)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3242b58a60274c2286a78f6fdd24d5ff)](https://www.codacy.com/app/tandalf/ravepy?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=tandalf/ravepy&amp;utm_campaign=Badge_Grade)
 [![Read The Docs](https://img.shields.io/badge/docs-readthedocs-blue.svg)](http://ravepy.readthedocs.io/en/latest/)
+[![PyPI version](https://badge.fury.io/py/ravepy.svg)](https://badge.fury.io/py/ravepy)
 ![Python Versions](https://img.shields.io/badge/python-2.7%2C%203.3%2C%203.4%2C%203.5%2C%203.6-blue.svg)
 
 This introduction covers what the python client library for the rave payment
