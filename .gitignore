@@ -17,7 +17,6 @@
 coverage/
 .coverage
 .cache
-.coveragerc
 
 # Others
 *__pycache__/
