@@ -6,7 +6,7 @@ URLS = namedtuple('URLS', ['DIRECT_CHARGE_URL', 'VALIDATE_CARD_CHARGE_URL',
     'TRANSACTION_VERIFICATION_XREQUERY_URL', 'PREAUTH_CHARGE_URL',
     'PREAUTH_CAPTURE_URL', 'PREAUTH_VOID_URL', 'GET_FEES_URL', 'BANKS_URL'])
 
-DEV_URL = 'http://flw-pms-dev.eu-west-1.elasticbeanstalk.com'
+DEV_URL = 'https://ravesandboxapi.flutterwave.com'
 PROD_URL = 'https://api.ravepay.co'
 
 url_kwargs = {
